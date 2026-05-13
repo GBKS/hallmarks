@@ -1,8 +1,17 @@
 //
-//  AddressPattern.swift
+//  Hallmark.swift
 //
-//  A deterministic, collision-resistant identicon for Bitcoin and Ark addresses,
-//  designed for at-a-glance visual address verification.
+//  Hallmarks — deterministic visual marks for verifying identifiers.
+//  Reference SwiftUI implementation of Hallmarks v1.0.
+//
+//  Spec: SPEC.md (CC0 1.0)
+//  Code: MIT — see LICENSE
+//
+//  SPDX-License-Identifier: MIT
+//
+//  A deterministic, collision-resistant visual mark for any string identifier
+//  (crypto addresses, key fingerprints, commit SHAs, etc.), designed for
+//  at-a-glance visual comparison.
 //
 //  Design (spec v1):
 //  - Input: address string, hashed with SHA-256.
@@ -83,7 +92,7 @@ import CryptoKit
 // MARK: - Public API
 
 /// Visual style for the identicon.
-public enum AddressPatternStyle: Equatable {
+public enum HallmarkStyle: Equatable {
     /// Standard style with OKLCH-derived colors and subtle contrast
     case standard
     /// High-contrast style with boosted lightness/chroma separation
@@ -92,33 +101,35 @@ public enum AddressPatternStyle: Equatable {
     case monochrome
 }
 
-/// A deterministic identicon view for a Bitcoin or Ark address.
+/// A deterministic visual mark for any string identifier — crypto address,
+/// key fingerprint, commit SHA, anything you'd otherwise verify character
+/// by character. See https://hallmarks.info for the full spec.
 ///
 /// Usage:
-///   AddressPattern(address: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq")
+///   Hallmark(input: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq")
 ///       .frame(width: 64)
 ///
-///   AddressPattern(address: "bc1qar0...", style: .monochrome, bordered: true)
+///   Hallmark(input: "bc1qar0...", style: .monochrome, bordered: true)
 ///       .frame(width: 64)
 ///
-/// The view automatically maintains the 5:7 aspect ratio (taller than wide).
+/// The view automatically maintains the 25:33 aspect ratio (taller than wide).
 /// Provide width via `.frame(width:)` and let height size itself.
-public struct AddressPattern: View {
-    let address: String
-    let style: AddressPatternStyle
+public struct Hallmark: View {
+    let input: String
+    let style: HallmarkStyle
     let bordered: Bool
 
-    public init(address: String, style: AddressPatternStyle = .standard, bordered: Bool = false) {
-        self.address = address
+    public init(input: String, style: HallmarkStyle = .standard, bordered: Bool = false) {
+        self.input = input
         self.style = style
         self.bordered = bordered
     }
 
     public var body: some View {
-        let spec = AddressPatternSpec(address: address, style: style, bordered: bordered)
-        AddressPatternCanvas(spec: spec)
-            .aspectRatio(AddressPatternSpec.aspectRatio, contentMode: .fit)
-            .accessibilityLabel("Address identicon")
+        let spec = HallmarkSpec(input: input, style: style, bordered: bordered)
+        HallmarkCanvas(spec: spec)
+            .aspectRatio(HallmarkSpec.aspectRatio, contentMode: .fit)
+            .accessibilityLabel("Hallmark")
     }
 }
 
@@ -179,7 +190,7 @@ private enum SpecConstants {
 // MARK: - Spec derivation
 
 /// Everything needed to draw an identicon, derived deterministically from the address.
-struct AddressPatternSpec: Equatable {
+struct HallmarkSpec: Equatable {
     /// 5×7 cell grid. 0 = background, 1 = foreground, 2 = accent.
     /// Each row is left-right symmetric: column N mirrors column (4-N).
     let cells: [[Int]]
@@ -187,7 +198,7 @@ struct AddressPatternSpec: Equatable {
     let foregroundColor: Color
     let accentColor: Color
     let borderColor: Color
-    let style: AddressPatternStyle
+    let style: HallmarkStyle
     let bordered: Bool
 
     /// Tile width-to-height ratio. With 10% padding on each side and a 5×7
@@ -199,13 +210,13 @@ struct AddressPatternSpec: Equatable {
         return 1.0 / height
     }()
 
-    init(address: String, style: AddressPatternStyle = .standard, bordered: Bool = false) {
+    init(input: String, style: HallmarkStyle = .standard, bordered: Bool = false) {
         self.style = style
         self.bordered = bordered
 
-        // SHA-256 of the address. Strong avalanche means a one-character typo
-        // produces a completely different avatar.
-        let digest = SHA256.hash(data: Data(address.utf8))
+        // SHA-256 of the input. Strong avalanche means a one-character typo
+        // produces a completely different hallmark.
+        let digest = SHA256.hash(data: Data(input.utf8))
         let bytes = Array(digest)
         precondition(bytes.count == 32)
 
@@ -328,8 +339,8 @@ struct AddressPatternSpec: Equatable {
 /// Renders the identicon to a single Canvas. One Canvas per avatar regardless
 /// of how many cells are filled — important for smooth scrolling in lists with
 /// many avatars.
-private struct AddressPatternCanvas: View {
-    let spec: AddressPatternSpec
+private struct HallmarkCanvas: View {
+    let spec: HallmarkSpec
 
     var body: some View {
         Canvas { context, size in
@@ -508,7 +519,7 @@ private func srgbEncode(_ v: Double) -> Double {
 
                 HStack(spacing: 24) {
                     VStack(spacing: 8) {
-                        AddressPattern(address: addresses[0], style: .standard)
+                        Hallmark(input: addresses[0], style: .standard)
                             .frame(width: 60)
                         Text("Standard")
                             .font(.caption)
@@ -516,7 +527,7 @@ private func srgbEncode(_ v: Double) -> Double {
                     }
 
                     VStack(spacing: 8) {
-                        AddressPattern(address: addresses[0], style: .highContrast)
+                        Hallmark(input: addresses[0], style: .highContrast)
                             .frame(width: 60)
                         Text("High Contrast")
                             .font(.caption)
@@ -524,7 +535,7 @@ private func srgbEncode(_ v: Double) -> Double {
                     }
 
                     VStack(spacing: 8) {
-                        AddressPattern(address: addresses[0], style: .monochrome)
+                        Hallmark(input: addresses[0], style: .monochrome)
                             .frame(width: 60)
                         Text("Monochrome")
                             .font(.caption)
@@ -542,7 +553,7 @@ private func srgbEncode(_ v: Double) -> Double {
 
                 HStack(spacing: 24) {
                     VStack(spacing: 8) {
-                        AddressPattern(address: addresses[0], style: .standard, bordered: true)
+                        Hallmark(input: addresses[0], style: .standard, bordered: true)
                             .frame(width: 45)
                         Text("Standard")
                             .font(.caption)
@@ -550,7 +561,7 @@ private func srgbEncode(_ v: Double) -> Double {
                     }
 
                     VStack(spacing: 8) {
-                        AddressPattern(address: addresses[0], style: .highContrast, bordered: true)
+                        Hallmark(input: addresses[0], style: .highContrast, bordered: true)
                             .frame(width: 45)
                         Text("High Contrast")
                             .font(.caption)
@@ -558,7 +569,7 @@ private func srgbEncode(_ v: Double) -> Double {
                     }
 
                     VStack(spacing: 8) {
-                        AddressPattern(address: addresses[0], style: .monochrome, bordered: true)
+                        Hallmark(input: addresses[0], style: .monochrome, bordered: true)
                             .frame(width: 45)
                         Text("Monochrome")
                             .font(.caption)
@@ -576,7 +587,7 @@ private func srgbEncode(_ v: Double) -> Double {
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 4), spacing: 12) {
                     ForEach(addresses, id: \.self) { addr in
-                        AddressPattern(address: addr, style: .standard)
+                        Hallmark(input: addr, style: .standard)
                             .frame(width: 34)
                     }
                 }
@@ -591,7 +602,7 @@ private func srgbEncode(_ v: Double) -> Double {
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 4), spacing: 12) {
                     ForEach(addresses, id: \.self) { addr in
-                        AddressPattern(address: addr, style: .highContrast)
+                        Hallmark(input: addr, style: .highContrast)
                             .frame(width: 34)
                     }
                 }
@@ -606,7 +617,7 @@ private func srgbEncode(_ v: Double) -> Double {
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 4), spacing: 12) {
                     ForEach(addresses, id: \.self) { addr in
-                        AddressPattern(address: addr, style: .monochrome)
+                        Hallmark(input: addr, style: .monochrome)
                             .frame(width: 34)
                     }
                 }
@@ -622,11 +633,11 @@ private func srgbEncode(_ v: Double) -> Double {
                 VStack(spacing: 12) {
                     ForEach(addresses.prefix(3), id: \.self) { addr in
                         HStack(spacing: 12) {
-                            AddressPattern(address: addr, style: .standard)
+                            Hallmark(input: addr, style: .standard)
                                 .frame(width: 22)
-                            AddressPattern(address: addr, style: .highContrast)
+                            Hallmark(input: addr, style: .highContrast)
                                 .frame(width: 22)
-                            AddressPattern(address: addr, style: .monochrome)
+                            Hallmark(input: addr, style: .monochrome)
                                 .frame(width: 22)
                             Text(addr.prefix(10) + "..." + addr.suffix(6))
                                 .font(.system(.caption, design: .monospaced))

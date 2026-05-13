@@ -4,23 +4,33 @@
   "description": "Spot it before you read it. Deterministic visual marks for verifying identifiers.",
   "type": "module",
   "main": "hallmark.js",
-  "types": "hallmark.ts",
+  "types": "hallmark.d.ts",
+  "exports": {
+    ".": {
+      "types": "./hallmark.d.ts",
+      "default": "./hallmark.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
-    "hallmark.ts",
     "hallmark.js",
-    "bip39-english.ts",
+    "hallmark.d.ts",
+    "bip39-english.d.ts",
     "SPEC.md",
     "test-vectors.json",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build":        "esbuild hallmark.ts --bundle --format=esm --target=es2020 --outfile=hallmark.js",
-    "test-vectors": "tsx scripts/generate-test-vectors.ts",
-    "test-render":  "node scripts/render-test.mjs",
-    "make-og":      "node scripts/make-og-image.mjs",
-    "make-preview": "node scripts/make-preview.mjs",
-    "build-all":    "npm run build && npm run test-vectors && npm run make-og && npm run make-preview"
+    "build":         "esbuild hallmark.ts --bundle --format=esm --target=es2020 --outfile=hallmark.js",
+    "build:types":   "tsc",
+    "build:all":     "npm run build && npm run build:types",
+    "test-vectors":  "tsx scripts/generate-test-vectors.ts",
+    "test-render":   "node scripts/render-test.mjs",
+    "make-og":       "node scripts/make-og-image.mjs",
+    "make-preview":  "node scripts/make-preview.mjs",
+    "build-site":    "npm run build:all && npm run test-vectors && npm run make-og && npm run make-preview",
+    "prepublishOnly":"npm run build:all && npm run test-render"
   },
   "keywords": [
     "identicon",

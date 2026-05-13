@@ -10,9 +10,9 @@ This repository contains:
 
 - [**`SPEC.md`**](SPEC.md) — the Hallmarks v1.0 specification.
 - [**`hallmark.ts`**](hallmark.ts) — TypeScript reference implementation. Bundles to a small ES module for the web; also runs in Node.
-- [**`reference/AddressPattern.swift`**](reference/AddressPattern.swift) — Swift reference implementation (SwiftUI).
+- [**`Sources/Hallmarks/Hallmark.swift`**](Sources/Hallmarks/Hallmark.swift) — Swift reference implementation (SwiftUI), available as a SwiftPM package via `Package.swift` at the repo root.
 - [**`test-vectors.json`**](test-vectors.json) — frozen conformance vectors. An implementation conforms if it reproduces every vector exactly.
-- [**`index.html`**](index.html) — the project website.
+- [**`index.html`**](index.html) — the project website (live at [hallmarks.info](https://hallmarks.info)).
 
 ## What it produces
 
