@@ -1,0 +1,51 @@
+{
+  "name": "hallmarks",
+  "version": "1.0.0",
+  "description": "Spot it before you read it. Deterministic visual marks for verifying identifiers.",
+  "type": "module",
+  "main": "hallmark.js",
+  "types": "hallmark.ts",
+  "files": [
+    "hallmark.ts",
+    "hallmark.js",
+    "bip39-english.ts",
+    "SPEC.md",
+    "test-vectors.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build":        "esbuild hallmark.ts --bundle --format=esm --target=es2020 --outfile=hallmark.js",
+    "test-vectors": "tsx scripts/generate-test-vectors.ts",
+    "test-render":  "node scripts/render-test.mjs",
+    "make-og":      "node scripts/make-og-image.mjs",
+    "make-preview": "node scripts/make-preview.mjs",
+    "build-all":    "npm run build && npm run test-vectors && npm run make-og && npm run make-preview"
+  },
+  "keywords": [
+    "identicon",
+    "address",
+    "bitcoin",
+    "verification",
+    "fingerprint",
+    "hash",
+    "visualization"
+  ],
+  "author": "Christoph Ono",
+  "homepage": "https://hallmarks.info",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GBKS/hallmarks.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GBKS/hallmarks/issues"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^29.1.1",
+    "sharp": "^0.34.5",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hallmarks — spot it before you read it</title>
+<meta name="description" content="Hallmarks turn long, opaque identifiers into small, distinct visual marks — so a glance is enough to tell whether two strings are the same.">
+<link rel="canonical" href="https://hallmarks.info/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hallmarks">
+<meta property="og:description" content="Spot it before you read it. Deterministic visual marks for verifying identifiers.">
+<meta property="og:url" content="https://hallmarks.info/">
+<meta property="og:image" content="https://hallmarks.info/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<style>
+:root {
+  --ink:       #1c1b18;
+  --ink-soft:  #4a4843;
+  --ink-mute:  #7a7872;
+  --bg:        #fafaf6;
+  --bg-tile:   #f3f1ec;
+  --bg-card:   #ffffff;
+  --line:      #e6e2d9;
+  --line-soft: #efece4;
+  --accent:    #c5572b;
+  --accent-soft: #f1e2d6;
+  --good:      #2c7a47;
+  --bad:       #b13428;
+  --code-bg:   #f0ede5;
+  --radius:    14px;
+  --radius-sm: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:       #f4f1e8;
+    --ink-soft:  #b9b5a9;
+    --ink-mute:  #807c70;
+    --bg:        #14130f;
+    --bg-tile:   #1c1b16;
+    --bg-card:   #1f1e19;
+    --line:      #2d2b25;
+    --line-soft: #25231e;
+    --accent:    #e3814f;
+    --accent-soft: #2a1c12;
+    --good:      #6dbf85;
+    --bad:       #e16a5c;
+    --code-bg:   #221f19;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+header.site {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 28px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.wordmark svg { display: block; height: 28px; width: auto; }
+
+nav.site {
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+nav.site a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+nav.site a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 0.5em;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+h1 { font-size: clamp(36px, 6vw, 64px); letter-spacing: -0.035em; }
+h2 { font-size: clamp(24px, 3.2vw, 34px); letter-spacing: -0.025em; }
+h3 { font-size: 19px; }
+
+p { margin: 0 0 1em; color: var(--ink-soft); }
+p.lead { color: var(--ink); font-size: clamp(18px, 1.8vw, 22px); line-height: 1.5; }
+
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+a:hover { color: var(--ink); }
+
+code, pre, .mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, "Cascadia Mono", "Roboto Mono", monospace; }
+code { font-size: 0.92em; }
+
+pre {
+  background: var(--code-bg);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  margin: 0 0 16px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+section { padding: 80px 0; border-top: 1px solid var(--line); }
+section.hero { padding-top: 60px; border-top: none; }
+section:last-of-type { border-bottom: 1px solid var(--line); }
+
+/* ===== Hero ===== */
+.hero h1 {
+  margin-top: 32px;
+  margin-bottom: 18px;
+}
+
+.hero p.lead { max-width: 640px; margin-bottom: 56px; }
+
+.verify {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: clamp(16px, 3vw, 36px);
+  align-items: stretch;
+  margin: 0 auto;
+}
+
+.verify .pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.verify .hm-wrap {
+  width: clamp(140px, 22vw, 220px);
+  filter: drop-shadow(0 4px 18px rgba(0,0,0,0.05));
+}
+
+.verify .hm-wrap svg { width: 100%; height: auto; display: block; }
+
+.verify .words {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  color: var(--ink-mute);
+  letter-spacing: 0;
+  text-align: center;
+  min-height: 1.5em;
+}
+
+.verify input[type="text"] {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.verify input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.verify .compare-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: clamp(40px, 6vw, 60px);
+  min-width: 56px;
+}
+
+.verify .compare-indicator .symbol {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  background: var(--bad);
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.verify .compare-indicator.match .symbol { background: var(--good); }
+
+.verify .compare-indicator .label {
+  font-size: 12px;
+  color: var(--ink-mute);
+  margin-top: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.verify .compare-indicator.match .label { color: var(--good); }
+.verify .compare-indicator:not(.match) .label { color: var(--bad); }
+
+.hero .below {
+  margin-top: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  font-size: 14px;
+}
+
+button.action {
+  border: 1px solid var(--line);
+  background: var(--bg-card);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+button.action:hover { border-color: var(--ink); }
+
+button.action.subtle {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-soft);
+}
+button.action.subtle:hover { color: var(--ink); }
+
+@media (max-width: 720px) {
+  .verify {
+    grid-template-columns: 1fr;
+  }
+  .verify .compare-indicator {
+    flex-direction: row;
+    padding-top: 0;
+    gap: 14px;
+  }
+  .verify .compare-indicator .symbol { width: 36px; height: 36px; font-size: 18px; }
+  .verify .compare-indicator .label { margin-top: 0; }
+}
+
+/* ===== What it's for ===== */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 22px 18px;
+}
+
+.card .hm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.card .hm-row .hm-wrap { width: 36px; }
+.card .hm-row .hm-wrap svg { width: 100%; height: auto; display: block; }
+
+.card .hm-row code {
+  background: var(--code-bg);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.card h3 { margin-bottom: 8px; }
+.card p { font-size: 14px; margin-bottom: 0; }
+
+/* ===== Compare row ===== */
+.compare-table {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.compare-table .cell {
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 16px 18px;
+}
+
+.compare-table .cell .frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 110px;
+  margin-bottom: 14px;
+}
+
+.compare-table .cell .name {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.compare-table .cell .note {
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: 4px;
+  display: block;
+}
+
+.compare-table .cell.hallmark-cell { border-color: var(--accent); }
+.compare-table .cell.hallmark-cell .name { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .compare-table { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== Industries ===== */
+.industries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.industry {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 26px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 28px;
+  align-items: center;
+}
+
+.industry-header h3 { margin-bottom: 6px; font-size: 18px; }
+.industry-header p {
+  font-size: 14px;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.industry-demo {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.ind-panel {
+  background: var(--bg-tile);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ind-panel-label {
+  font-size: 11px;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+.ind-panel-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ind-panel-body .hm-wrap { width: 38px; flex-shrink: 0; }
+.ind-panel-body .hm-wrap svg { width: 100%; display: block; }
+
+.ind-id {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ind-match {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.ind-match .symbol {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--good);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 800px) {
+  .industry { grid-template-columns: 1fr; gap: 18px; }
+}
+
+@media (max-width: 560px) {
+  .industry-demo { grid-template-columns: 1fr; }
+  .ind-match { padding: 4px 0; }
+  .ind-match .symbol { transform: rotate(90deg); }
+}
+
+/* ===== Styles section ===== */
+.styles-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.styles-row .style-cell {
+  text-align: center;
+}
+
+.styles-row .style-cell .hm-wrap {
+  width: 120px;
+  margin: 0 auto 14px;
+}
+.styles-row .style-cell .hm-wrap svg { width: 100%; display: block; }
+.styles-row .style-cell .style-name {
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.styles-row .style-cell .style-desc {
+  font-size: 13px;
+  color: var(--ink-mute);
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .styles-row { grid-template-columns: 1fr; }
+}
+
+/* ===== Borders ===== */
+.borders-stage {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.bs-frame {
+  border-radius: var(--radius);
+  padding: 44px 24px 28px;
+  text-align: center;
+  position: relative;
+}
+
+.bs-frame.tinted {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(135deg, #cdd9e5 0%, #d9cee0 100%);
+}
+
+.bs-frame.photographic {
+  background:
+    linear-gradient(135deg, rgba(40,30,28,0.35) 0%, rgba(80,60,55,0.05) 100%),
+    repeating-linear-gradient(45deg, #8a6552 0px, #8a6552 14px, #95705c 14px, #95705c 28px);
+}
+
+.bs-frame .bs-tag {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(0,0,0,0.5);
+}
+
+.bs-frame.photographic .bs-tag { color: rgba(255,255,255,0.85); }
+
+.bs-pair {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.bs-cell { text-align: center; }
+.bs-cell .hm-wrap { width: 88px; margin: 0 auto 12px; }
+.bs-cell .hm-wrap svg { width: 100%; display: block; }
+.bs-cell .bs-label {
+  font-size: 12px;
+  color: rgba(0,0,0,0.6);
+  font-weight: 500;
+}
+.bs-frame.photographic .bs-cell .bs-label { color: rgba(255,255,255,0.85); }
+
+@media (max-width: 720px) {
+  .borders-stage { grid-template-columns: 1fr; }
+  .bs-frame { padding: 40px 20px 24px; }
+}
+
+/* ===== Gallery ===== */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.gallery-grid .g-item .hm-wrap { width: 100%; }
+.gallery-grid .g-item .hm-wrap svg { width: 100%; display: block; }
+
+/* ===== Sizes ===== */
+.sizes-row {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.sizes-row .row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  flex-wrap: wrap;
+}
+
+.sizes-row .row .addr {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink-mute);
+  flex: 1;
+  min-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sizes-row .row .hm-set {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.sizes-row .row .hm-set .hm-wrap svg { display: block; }
+
+/* ===== Low-res ===== */
+.lowres-grid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 16px 28px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.lowres-grid .lr-style-label {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.lowres-grid .lr-style-label .lr-style-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+.lowres-grid .lr-style-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.lowres-grid .lr-cell { text-align: center; }
+
+.lowres-grid .lr-cell canvas {
+  display: block;
+  margin: 0 auto;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  border-radius: 2px;
+}
+
+.lowres-grid .lr-cell .lr-label {
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: 6px;
+}
+
+@media (max-width: 560px) {
+  .lowres-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .lowres-grid .lr-style-label { margin-top: 12px; }
+}
+
+/* ===== Verbal ===== */
+.verbal-box {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: center;
+}
+
+.verbal-box .hm-wrap { width: 96px; }
+.verbal-box .hm-wrap svg { width: 100%; display: block; }
+
+.verbal-box .v-text .words {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 22px;
+  letter-spacing: 0;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.verbal-box .v-text .caption {
+  font-size: 13px;
+  color: var(--ink-mute);
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .verbal-box { grid-template-columns: 1fr; text-align: center; }
+  .verbal-box .hm-wrap { margin: 0 auto; }
+}
+
+/* ===== Use it ===== */
+.install-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.install-grid h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 720px) {
+  .install-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Background / colophon ===== */
+section.background {
+  padding: 64px 0 72px;
+}
+section.background h2 {
+  font-size: 19px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+.bg-body {
+  max-width: 620px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+}
+.bg-body p { margin-bottom: 14px; }
+.bg-body p:last-of-type { margin-bottom: 0; }
+.bg-body .signature {
+  margin-top: 18px;
+  color: var(--ink-mute);
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* ===== Footer ===== */
+footer.site {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 48px 28px 56px;
+  color: var(--ink-mute);
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+footer.site a { color: var(--ink-soft); border-bottom-color: var(--line); }
+footer.site a:hover { color: var(--ink); }
+
+/* ===== Misc ===== */
+.section-intro { max-width: 640px; }
+.section-intro h2 { margin-bottom: 12px; }
+.section-intro p { color: var(--ink-soft); }
+
+.subtle { color: var(--ink-mute); }
+
+@media (max-width: 480px) {
+  main { padding: 0 20px; }
+  header.site { padding: 20px 20px 0; }
+  footer.site { padding: 32px 20px 40px; }
+  section { padding: 56px 0; }
+}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <a class="wordmark" href="#" aria-label="Hallmarks home">
+    <svg viewBox="0 0 100 132" aria-hidden="true" id="wordmark-svg"></svg>
+    <span>Hallmarks</span>
+  </a>
+  <nav class="site">
+    <a href="#use-it">Use it</a>
+    <a href="SPEC.md">Spec</a>
+    <a href="https://github.com/GBKS/hallmarks">GitHub</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <h1>Spot it<br>before you read it.</h1>
+  <p class="lead">
+    Hallmarks turn long, opaque identifiers — crypto addresses, key fingerprints, commit SHAs, anything you'd otherwise read character by character — into small, distinct visual marks. A mismatch jumps out before you've finished reading the string. The careful read is still yours when it matters.
+  </p>
+
+  <div class="verify" id="verify">
+    <div class="pane">
+      <div class="hm-wrap" id="hm-a"></div>
+      <div class="words" id="words-a"></div>
+      <input type="text" id="input-a" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="compare-indicator" id="compare-indicator">
+      <div class="symbol" id="compare-symbol">≠</div>
+      <div class="label" id="compare-label">No match</div>
+    </div>
+    <div class="pane">
+      <div class="hm-wrap" id="hm-b"></div>
+      <div class="words" id="words-b"></div>
+      <input type="text" id="input-b" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="below">
+    <button class="action" id="btn-typo">Try a crypto-address typo</button>
+    <button class="action" id="btn-iban-typo">Try an IBAN typo</button>
+    <button class="action subtle" id="btn-randomize">Randomize both</button>
+    <button class="action subtle" id="btn-copy-a">Copy A to B</button>
+  </div>
+</section>
+
+<!-- ============ WHAT IT'S FOR ============ -->
+<section>
+  <div class="section-intro">
+    <h2>For anything you compare character by character</h2>
+    <p>Hallmarks aren't avatars and they're not memory aids — you don't need to remember what your hallmark looked like yesterday. You only need to compare what's on the screen with what's somewhere else: another screen, a printed receipt, a hardware wallet, a teammate's terminal.</p>
+  </div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<!-- ============ INDUSTRIES ============ -->
+<section>
+  <div class="section-intro">
+    <h2>Where else this fits</h2>
+    <p>Crypto popularized the need because the cost of getting it wrong is immediate and irreversible. But the same comparison problem shows up in any industry where humans are the bridge between two systems that need to agree on a long opaque string — banking, logistics, healthcare, software supply chains, legal, scientific records.</p>
+  </div>
+  <div class="industries-list" id="industries-list"></div>
+</section>
+
+<!-- ============ HOW IT COMPARES ============ -->
+<section>
+  <div class="section-intro">
+    <h2>How it compares to prior art</h2>
+    <p>The same input, rendered by four different identicon systems. Hallmarks are designed specifically for visual matching — symmetric, perceptually-tuned colors, optimized for small sizes, with a verbal and pixel-art companion built in.</p>
+  </div>
+  <div class="compare-table" id="compare-table"></div>
+</section>
+
+<!-- ============ STYLES ============ -->
+<section>
+  <div class="section-intro">
+    <h2>Three styles, one algorithm</h2>
+    <p>The same pattern, rendered for different display environments. Monochrome uses shape (circle vs. rounded square) to carry the third value when color isn't available.</p>
+  </div>
+  <div class="styles-row" id="styles-row"></div>
+</section>
+
+<!-- ============ BORDERS ============ -->
+<section>
+  <div class="section-intro">
+    <h2>Borders for busy backgrounds</h2>
+    <p>An optional 1-unit stroke in the primary color. Useful when the hallmark sits against a tinted surface, a photograph, or other hallmarks in a dense list — anywhere its own light background would otherwise blur into the surroundings. <code>bordered: true</code>.</p>
+  </div>
+  <div class="borders-stage" id="borders-stage">
+    <div class="bs-frame tinted">
+      <div class="bs-tag">Tinted card</div>
+      <div class="bs-pair">
+        <div class="bs-cell">
+          <div class="hm-wrap" data-input="borders" data-border="0"></div>
+          <div class="bs-label">No border</div>
+        </div>
+        <div class="bs-cell">
+          <div class="hm-wrap" data-input="borders" data-border="1"></div>
+          <div class="bs-label">With border</div>
+        </div>
+      </div>
+    </div>
+    <div class="bs-frame photographic">
+      <div class="bs-tag">Photo / pattern</div>
+      <div class="bs-pair">
+        <div class="bs-cell">
+          <div class="hm-wrap" data-input="borders" data-border="0"></div>
+          <div class="bs-label">No border</div>
+        </div>
+        <div class="bs-cell">
+          <div class="hm-wrap" data-input="borders" data-border="1"></div>
+          <div class="bs-label">With border</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section>
+  <div class="section-intro">
+    <h2>Visual variety</h2>
+    <p>Twenty-four arbitrary inputs. The point of the grid isn't beauty — it's that no two look the same at a glance. Hover any tile to see its source string.</p>
+  </div>
+  <div class="gallery-grid" id="gallery"></div>
+  <div style="margin-top: 22px;">
+    <button class="action" id="btn-regen-gallery">Generate new set</button>
+  </div>
+</section>
+
+<!-- ============ SIZES ============ -->
+<section>
+  <div class="section-intro">
+    <h2>Designed to work small</h2>
+    <p>Hallmarks were tuned for the 22–34 px range — small enough to sit inline next to an address line, large enough to distinguish without squinting. Below 18 px, switch to the 14×20 pixel-art variant.</p>
+  </div>
+  <div class="sizes-row" id="sizes-row"></div>
+</section>
+
+<!-- ============ LOW-RES ============ -->
+<section>
+  <div class="section-intro">
+    <h2>14×20 pixel-art mode</h2>
+    <p>For hardware wallets, e-ink readers, embedded LCDs, and any display where sub-pixel rendering isn't available. Each cell becomes a 2×2 block; accent cells take a diagonal two-pixel form so the three-value distinction survives. Render once, upscale with nearest-neighbor — never anti-aliasing.</p>
+  </div>
+  <div class="lowres-grid" id="lowres-grid"></div>
+</section>
+
+<!-- ============ VERBAL ============ -->
+<section>
+  <div class="section-intro">
+    <h2>Three words for ears, screen readers, and phone calls</h2>
+    <p>Every hallmark has a three-word companion drawn from the BIP-39 English wordlist, derived from the same hash. It's the natural <code>aria-label</code> for the image, the natural thing to read aloud over a phone call ("does your screen say <em>violin orbit tangerine</em>?"), and the natural thing to show below the visual when you want a second channel.</p>
+  </div>
+  <div class="verbal-box">
+    <div class="hm-wrap" id="verbal-hm"></div>
+    <div class="v-text">
+      <div class="words" id="verbal-words"></div>
+      <div class="caption" id="verbal-caption">From: <span class="mono" id="verbal-input"></span></div>
+    </div>
+  </div>
+  <div style="margin-top: 18px;">
+    <button class="action subtle" id="btn-verbal-randomize">Try another</button>
+  </div>
+</section>
+
+<!-- ============ USE IT ============ -->
+<section id="use-it">
+  <div class="section-intro">
+    <h2>Use it</h2>
+    <p>Two reference implementations ship today: TypeScript for the web and Node, Swift for iOS and macOS. Both produce byte-identical output for the same input — you can mix and match across platforms.</p>
+  </div>
+  <div class="install-grid">
+    <div>
+      <h3>TypeScript / JavaScript</h3>
+<pre><code>npm install hallmarks</code></pre>
+<pre><code>import { hallmark, hallmarkWords } from "hallmarks";
+
+const node = hallmark("bc1qar0srrr7xfkvy...");
+document.querySelector("#avatar").appendChild(node);
+
+const aria = hallmarkWords("bc1qar0srrr7xfkvy...");
+// → ["brush", "swarm", "always"]</code></pre>
+    </div>
+    <div>
+      <h3>Swift</h3>
+<pre><code>// Package.swift
+.package(url: "https://github.com/GBKS/hallmarks", from: "1.0.0")</code></pre>
+<pre><code>import Hallmarks
+
+Hallmark(input: "bc1qar0srrr7xfkvy...")
+    .frame(width: 64)</code></pre>
+    </div>
+  </div>
+  <p style="margin-top: 22px;">Both implementations are reference implementations of <a href="SPEC.md">the Hallmarks v1.0 specification</a>. Conformance test vectors live in <a href="test-vectors.json">test-vectors.json</a> — any new implementation that reproduces every vector exactly is conformant.</p>
+</section>
+
+<!-- ============ BACKGROUND ============ -->
+<section class="background">
+  <h2>Background</h2>
+  <div class="bg-body">
+    <p>Hallmarks grew out of <a href="https://arke.cash">Arké</a>, an experimental Bitcoin and Ark wallet I've been building, where sending money to long, look-alike addresses needed a visual second channel. The first sketch lived inside the app; after <a href="https://gbks.substack.com/p/unique-address-patterns">a post arguing for a standard</a>, it became its own thing — open spec, two reference implementations, and the site you're looking at.</p>
+    <p>Arké is in TestFlight if you'd like to see Hallmarks in real use, or to nudge the rough edges with me.</p>
+    <p class="signature">— Christoph Ono</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="site">
+  <div>
+    Hallmarks v1.0 · Spec &amp; test vectors are public domain (CC0); code is MIT.
+  </div>
+  <div>
+    <a href="SPEC.md">Specification</a> · <a href="test-vectors.json">Test vectors</a> · <a href="https://github.com/GBKS/hallmarks">GitHub</a>
+  </div>
+</footer>
+
+<script type="module">
+import { hallmark, hallmarkSpec, hallmarkSVG, hallmarkPixels, hallmarkWords } from "./hallmark.js";
+
+// =========================================================================
+// Helpers
+// =========================================================================
+
+function makeHallmark(input, opts = {}) {
+  // hallmarkSVG returns a string — parse it.
+  const svgStr = hallmarkSVG(input, opts);
+  const tpl = document.createElement("template");
+  tpl.innerHTML = svgStr.trim();
+  return tpl.content.firstChild;
+}
+
+function setHallmark(container, input, opts = {}) {
+  container.replaceChildren(makeHallmark(input, opts));
+}
+
+function randomString(len = 34) {
+  const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+const SAMPLE_ADDRESSES = [
+  "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+  "bc1q5shngj24323nsrmxv99st02na6srekfctt30ch",
+  "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+  "bc1prp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3",
+  "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+  "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",
+  "tark1pemq45fepe2dcc3vp43xq8c4yywvn8m5kvkx0evf3jc8efg2hxsqkuw3xv",
+  "tark1wp3suf7e5q8c4yywvn8m5kvkx0evf3jc8efg2hxsqkuw3xvm9k4z7p",
+  "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8",
+  "9d2c5e85e9b9f5e7b0a0c0d4f1a2b3c4d5e6f7a8",
+  "550e8400-e29b-41d4-a716-446655440000",
+  "sk-proj-aB12cD34eF56gH78iJ90",
+];
+
+function pick(arr, n) {
+  const copy = arr.slice();
+  const out = [];
+  while (out.length < n && copy.length) {
+    const i = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(i, 1)[0]);
+  }
+  return out;
+}
+
+// =========================================================================
+// Wordmark
+// =========================================================================
+
+document.getElementById("wordmark-svg").outerHTML =
+  hallmarkSVG("hallmarks", { style: "standard" })
+    .replace("<svg ", '<svg id="wordmark-svg" ');
+
+// =========================================================================
+// Favicon (data: URL from a hallmark of the brand name)
+// =========================================================================
+{
+  const svg = hallmarkSVG("hallmarks", { style: "standard" });
+  const dataUrl = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  const link = document.querySelector("link[rel='icon']");
+  if (link) link.href = dataUrl;
+}
+
+// =========================================================================
+// Hero: two-pane verification
+// =========================================================================
+
+const inputA = document.getElementById("input-a");
+const inputB = document.getElementById("input-b");
+const hmA = document.getElementById("hm-a");
+const hmB = document.getElementById("hm-b");
+const wordsAEl = document.getElementById("words-a");
+const wordsBEl = document.getElementById("words-b");
+const indicator = document.getElementById("compare-indicator");
+const sym = document.getElementById("compare-symbol");
+const label = document.getElementById("compare-label");
+
+function renderVerify() {
+  const a = inputA.value;
+  const b = inputB.value;
+  setHallmark(hmA, a);
+  setHallmark(hmB, b);
+  wordsAEl.textContent = hallmarkWords(a).join(" ");
+  wordsBEl.textContent = hallmarkWords(b).join(" ");
+  if (a === b && a.length > 0) {
+    indicator.classList.add("match");
+    sym.textContent = "=";
+    label.textContent = "Match";
+  } else {
+    indicator.classList.remove("match");
+    sym.textContent = "≠";
+    label.textContent = a.length === 0 || b.length === 0 ? "Empty" : "No match";
+  }
+}
+
+inputA.addEventListener("input", renderVerify);
+inputB.addEventListener("input", renderVerify);
+
+document.getElementById("btn-typo").addEventListener("click", () => {
+  const orig = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+  const typo = orig.slice(0, -1) + (orig.slice(-1) === "q" ? "r" : "q");
+  inputA.value = orig;
+  inputB.value = typo;
+  renderVerify();
+});
+
+document.getElementById("btn-iban-typo").addEventListener("click", () => {
+  // A pair of plausibly-similar German IBANs that differ by a single digit.
+  inputA.value = "DE89370400440532013000";
+  inputB.value = "DE89370400440532013009";
+  renderVerify();
+});
+
+document.getElementById("btn-randomize").addEventListener("click", () => {
+  inputA.value = randomString(34);
+  inputB.value = randomString(34);
+  renderVerify();
+});
+
+document.getElementById("btn-copy-a").addEventListener("click", () => {
+  inputB.value = inputA.value;
+  renderVerify();
+});
+
+// Initialize with the one-character-typo demo (most visceral first impression).
+inputA.value = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+inputB.value = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdr";
+renderVerify();
+
+// =========================================================================
+// What it's for cards
+// =========================================================================
+
+const CARDS = [
+  {
+    input: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+    title: "Crypto addresses",
+    label: "bc1qar0srrr7xfkv…wf5mdq",
+    desc: "Sender's screen vs. recipient's screen. Wallet vs. hardware-wallet display. The two should match before you sign.",
+  },
+  {
+    input: "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8",
+    title: "Key fingerprints",
+    label: "SHA256:nThbg6kXUpJWG…",
+    desc: "SSH host keys, PGP fingerprints, certificate hashes — the things you're supposed to verify out-of-band but rarely do.",
+  },
+  {
+    input: "9d2c5e85e9b9f5e7b0a0c0d4f1a2b3c4d5e6f7a8",
+    title: "Commit SHAs",
+    label: "9d2c5e85e9b9…",
+    desc: "What CI is building, what's deployed in prod, what the reviewer is looking at. Visual confirmation across systems.",
+  },
+];
+
+const cards = document.getElementById("cards");
+for (const card of CARDS) {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = `
+    <div class="hm-row">
+      <div class="hm-wrap"></div>
+      <code>${card.label}</code>
+    </div>
+    <h3>${card.title}</h3>
+    <p>${card.desc}</p>
+  `;
+  setHallmark(el.querySelector(".hm-wrap"), card.input);
+  cards.appendChild(el);
+}
+
+// =========================================================================
+// Industries — three vignettes showing the verification moment
+// =========================================================================
+
+const INDUSTRIES = [
+  {
+    title: "Banking",
+    desc:  "An invoice arrives by email with the supplier's IBAN. The clerk types it into the banking portal. Both the invoice and the portal display the hallmark next to the IBAN — a glance confirms the destination before the wire is signed off.",
+    id:    "DE89370400440532013000",
+    short: "DE89 3704 0044 0532 0130 00",
+    a: { label: "Invoice (PDF)" },
+    b: { label: "Banking app" },
+  },
+  {
+    title: "Logistics & supply chain",
+    desc:  "A truck arrives at the warehouse. The dock worker compares the manifest on the tablet against the printed container label. If the hallmarks match, sign for receipt; if not, hold the shipment.",
+    id:    "MSCU5678123",
+    short: "MSCU 567 812 3",
+    a: { label: "Shipping manifest" },
+    b: { label: "Container label" },
+  },
+  {
+    title: "Software supply chain",
+    desc:  "CI builds a Docker image, pushes it, records the digest. Production pulls the image and surfaces the digest on the deploy dashboard. Operators glance: hallmarks match → the right image shipped to the right cluster.",
+    id:    "sha256:5e2c4ab87c3d1a9f6b04eed91c3aa28f51bf06d3e4a13a5b8efc1d92aa31e7d8",
+    short: "sha256:5e2c4ab8…aa31e7d8",
+    a: { label: "CI build" },
+    b: { label: "Production deploy" },
+  },
+];
+
+const indList = document.getElementById("industries-list");
+for (const ind of INDUSTRIES) {
+  const el = document.createElement("div");
+  el.className = "industry";
+  el.innerHTML = `
+    <div class="industry-header">
+      <h3>${ind.title}</h3>
+      <p>${ind.desc}</p>
+    </div>
+    <div class="industry-demo">
+      <div class="ind-panel">
+        <div class="ind-panel-label">${ind.a.label}</div>
+        <div class="ind-panel-body">
+          <div class="hm-wrap"></div>
+          <div class="ind-id">${ind.short}</div>
+        </div>
+      </div>
+      <div class="ind-match"><div class="symbol">=</div></div>
+      <div class="ind-panel">
+        <div class="ind-panel-label">${ind.b.label}</div>
+        <div class="ind-panel-body">
+          <div class="hm-wrap"></div>
+          <div class="ind-id">${ind.short}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  const wraps = el.querySelectorAll(".ind-panel-body .hm-wrap");
+  setHallmark(wraps[0], ind.id);
+  setHallmark(wraps[1], ind.id);
+  indList.appendChild(el);
+}
+
+// =========================================================================
+// Compare row (Hallmarks vs. Blockies vs. Jdenticon-like vs. GitHub-like)
+//
+// Lightweight in-page approximations of the visual style of each system,
+// not byte-faithful implementations. Real libraries would be linked from
+// CDN; recreations keep the page self-contained.
+// =========================================================================
+
+const COMPARE_INPUT = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+
+// Mulberry-like PRNG seeded from a string hash (for the recreations).
+function strHash(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h;
+}
+
+function rng(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t = t ^ (t + Math.imul(t ^ (t >>> 7), t | 61));
+    return ((t ^ (t >>> 14)) >>> 0) / 0xFFFFFFFF;
+  };
+}
+
+// Blockies-style: 8×8 grid, vivid HSL colors, square pixels.
+function blockiesLike(input, size = 96) {
+  const r = rng(strHash(input + ":bg"));
+  const grid = 8;
+  const cell = size / grid;
+  const bg  = `hsl(${Math.floor(r() * 360)} 75% 60%)`;
+  const fg  = `hsl(${Math.floor(r() * 360)} 65% 45%)`;
+  const sp  = `hsl(${Math.floor(r() * 360)} 80% 50%)`;
+  const cells = [];
+  const r2 = rng(strHash(input + ":cells"));
+  for (let y = 0; y < grid; y++) {
+    const row = [];
+    for (let x = 0; x < grid / 2; x++) {
+      const v = r2();
+      row.push(v < 0.5 ? 0 : v < 0.85 ? 1 : 2);
+    }
+    for (let x = grid / 2 - 1; x >= 0; x--) row.push(row[x]);
+    cells.push(row);
+  }
+  let parts = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`];
+  parts.push(`<rect x="0" y="0" width="${size}" height="${size}" fill="${bg}"/>`);
+  for (let y = 0; y < grid; y++) {
+    for (let x = 0; x < grid; x++) {
+      if (cells[y][x] === 0) continue;
+      const fill = cells[y][x] === 2 ? sp : fg;
+      parts.push(`<rect x="${x*cell}" y="${y*cell}" width="${cell}" height="${cell}" fill="${fill}"/>`);
+    }
+  }
+  parts.push("</svg>");
+  return parts.join("");
+}
+
+// Jdenticon-style: rotated triangles in a 5-region layout, soft pastel.
+function jdenticonLike(input, size = 96) {
+  const r = rng(strHash(input + ":j"));
+  const baseHue = Math.floor(r() * 360);
+  const colors = [
+    `hsl(${baseHue} 50% 50%)`,
+    `hsl(${(baseHue + 120) % 360} 45% 55%)`,
+    `hsl(${(baseHue + 240) % 360} 40% 65%)`,
+  ];
+  const bg = "#f0f0ee";
+  const parts = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`];
+  parts.push(`<rect x="0" y="0" width="${size}" height="${size}" fill="${bg}"/>`);
+  // Five shapes at the corners and center, each a rotated triangle.
+  const positions = [
+    [size*0.18, size*0.18],
+    [size*0.82, size*0.18],
+    [size*0.18, size*0.82],
+    [size*0.82, size*0.82],
+    [size*0.50, size*0.50],
+  ];
+  for (let i = 0; i < positions.length; i++) {
+    const [cx, cy] = positions[i];
+    const sz = size * (0.12 + r() * 0.06);
+    const rot = Math.floor(r() * 4) * 90;
+    const color = colors[Math.floor(r() * colors.length)];
+    parts.push(`<g transform="translate(${cx} ${cy}) rotate(${rot})"><polygon points="${-sz},${-sz} ${sz},${-sz} ${-sz},${sz}" fill="${color}"/></g>`);
+  }
+  parts.push("</svg>");
+  return parts.join("");
+}
+
+// GitHub-style: 5×5 symmetric grid, single color, big square cells.
+function githubLike(input, size = 96) {
+  const r = rng(strHash(input + ":gh"));
+  const hue = Math.floor(r() * 360);
+  const fg = `hsl(${hue} 35% 45%)`;
+  const bg = "#ededec";
+  const grid = 5;
+  const margin = size * 0.10;
+  const cell = (size - 2 * margin) / grid;
+  const cells = [];
+  for (let y = 0; y < grid; y++) {
+    const row = [];
+    for (let x = 0; x < 3; x++) row.push(r() < 0.5 ? 1 : 0);
+    for (let x = 1; x >= 0; x--) row.push(row[x]);
+    cells.push(row);
+  }
+  const parts = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`];
+  parts.push(`<rect x="0" y="0" width="${size}" height="${size}" fill="${bg}"/>`);
+  for (let y = 0; y < grid; y++)
+    for (let x = 0; x < grid; x++)
+      if (cells[y][x])
+        parts.push(`<rect x="${margin + x*cell}" y="${margin + y*cell}" width="${cell}" height="${cell}" fill="${fg}"/>`);
+  parts.push("</svg>");
+  return parts.join("");
+}
+
+const compareEntries = [
+  { name: "Blockies",  note: "8×8, vivid HSL",      svg: blockiesLike(COMPARE_INPUT) },
+  { name: "Jdenticon-style", note: "Rotated shapes", svg: jdenticonLike(COMPARE_INPUT) },
+  { name: "GitHub-style", note: "5×5, single color", svg: githubLike(COMPARE_INPUT) },
+  { name: "Hallmarks", note: "5×7, OKLCH, words, pixels", isHallmark: true },
+];
+
+const ct = document.getElementById("compare-table");
+for (const e of compareEntries) {
+  const el = document.createElement("div");
+  el.className = "cell" + (e.isHallmark ? " hallmark-cell" : "");
+  el.innerHTML = `<div class="frame"></div><div class="name">${e.name}</div><span class="note">${e.note}</span>`;
+  const frame = el.querySelector(".frame");
+  if (e.isHallmark) {
+    const wrap = document.createElement("div");
+    wrap.style.width = "82px";
+    wrap.appendChild(makeHallmark(COMPARE_INPUT));
+    wrap.querySelector("svg").style.width = "82px";
+    wrap.querySelector("svg").style.height = "auto";
+    frame.appendChild(wrap);
+  } else {
+    frame.innerHTML = e.svg;
+    const svg = frame.querySelector("svg");
+    svg.setAttribute("width", "82");
+    svg.setAttribute("height", "82");
+  }
+  ct.appendChild(el);
+}
+
+// =========================================================================
+// Styles row
+// =========================================================================
+
+const stylesRow = document.getElementById("styles-row");
+const STYLE_DEMOS = [
+  { style: "standard", desc: "OKLCH-tuned color pair." },
+  { style: "high-contrast", desc: "For sunlight, low-quality displays, vision impairment." },
+  { style: "monochrome", desc: "Shape replaces color for the third value." },
+];
+const STYLE_INPUT = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+for (const d of STYLE_DEMOS) {
+  const el = document.createElement("div");
+  el.className = "style-cell";
+  el.innerHTML = `<div class="hm-wrap"></div><div class="style-name">${d.style.replace("-", " ")}</div><div class="style-desc">${d.desc}</div>`;
+  setHallmark(el.querySelector(".hm-wrap"), STYLE_INPUT, { style: d.style });
+  stylesRow.appendChild(el);
+}
+
+// =========================================================================
+// Borders
+// =========================================================================
+
+const BORDERS_INPUT = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+document.querySelectorAll("#borders-stage .hm-wrap").forEach((wrap) => {
+  const bordered = wrap.dataset.border === "1";
+  setHallmark(wrap, BORDERS_INPUT, { bordered });
+});
+
+// =========================================================================
+// Gallery
+// =========================================================================
+
+const galleryEl = document.getElementById("gallery");
+function buildGallery() {
+  galleryEl.replaceChildren();
+  for (let i = 0; i < 24; i++) {
+    const input = randomString(34);
+    const el = document.createElement("div");
+    el.className = "g-item";
+    el.title = input;
+    el.innerHTML = `<div class="hm-wrap"></div>`;
+    setHallmark(el.querySelector(".hm-wrap"), input);
+    galleryEl.appendChild(el);
+  }
+}
+buildGallery();
+document.getElementById("btn-regen-gallery").addEventListener("click", buildGallery);
+
+// =========================================================================
+// Sizes row
+// =========================================================================
+
+const sizesRow = document.getElementById("sizes-row");
+const SIZE_PX = [22, 28, 34, 48, 64];
+for (const addr of SAMPLE_ADDRESSES.slice(0, 4)) {
+  const row = document.createElement("div");
+  row.className = "row";
+  const sets = document.createElement("div");
+  sets.className = "hm-set";
+  for (const px of SIZE_PX) {
+    const wrap = document.createElement("div");
+    wrap.className = "hm-wrap";
+    wrap.style.width = px + "px";
+    wrap.appendChild(makeHallmark(addr));
+    wrap.querySelector("svg").style.width = px + "px";
+    wrap.querySelector("svg").style.height = "auto";
+    sets.appendChild(wrap);
+  }
+  const lbl = document.createElement("div");
+  lbl.className = "addr";
+  lbl.textContent = addr;
+  row.appendChild(sets);
+  row.appendChild(lbl);
+  sizesRow.appendChild(row);
+}
+
+// =========================================================================
+// Low-res pixel mode
+// =========================================================================
+
+const LOWRES_INPUT = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+
+const LOWRES_STYLES = [
+  { style: "standard",      sub: "OKLCH color pair" },
+  { style: "high-contrast", sub: "For sunlight & e-ink" },
+  { style: "monochrome",    sub: "1-bit displays" },
+];
+const LOWRES_SCALES = [
+  { px: 1, label: "Native 14×20" },
+  { px: 4, label: "4×" },
+  { px: 8, label: "8×" },
+];
+
+function buildLowres() {
+  const grid = document.getElementById("lowres-grid");
+  grid.replaceChildren();
+
+  for (const s of LOWRES_STYLES) {
+    const labelEl = document.createElement("div");
+    labelEl.className = "lr-style-label";
+    labelEl.innerHTML = `${s.style.replace("-", " ")}<span class="lr-style-sub">${s.sub}</span>`;
+    grid.appendChild(labelEl);
+
+    const styleRow = document.createElement("div");
+    styleRow.className = "lr-style-row";
+    grid.appendChild(styleRow);
+
+    const lr = hallmarkPixels(LOWRES_INPUT, { style: s.style });
+    for (const scale of LOWRES_SCALES) {
+      const cell = document.createElement("div");
+      cell.className = "lr-cell";
+      const c = document.createElement("canvas");
+      c.width = 14 * scale.px;
+      c.height = 20 * scale.px;
+      c.style.width = (14 * scale.px) + "px";
+      c.style.height = (20 * scale.px) + "px";
+      cell.appendChild(c);
+      const cap = document.createElement("div");
+      cap.className = "lr-label";
+      cap.textContent = scale.label;
+      cell.appendChild(cap);
+      styleRow.appendChild(cell);
+
+      const ctx = c.getContext("2d");
+      if (!ctx) continue; // canvas unavailable in test env
+      // Paint background.
+      ctx.fillStyle = lr.colors.background.hex;
+      ctx.fillRect(0, 0, c.width, c.height);
+      // Paint each pixel per its value (0/1/2).
+      for (let y = 0; y < 20; y++) {
+        for (let x = 0; x < 14; x++) {
+          const v = lr.pixels[y * 14 + x];
+          if (v === 0) continue;
+          // Monochrome: collapse value 2 → primary color.
+          const color = (s.style === "monochrome" || v === 1)
+            ? lr.colors.primary.hex
+            : lr.colors.accent.hex;
+          ctx.fillStyle = color;
+          ctx.fillRect(x * scale.px, y * scale.px, scale.px, scale.px);
+        }
+      }
+    }
+  }
+}
+try { buildLowres(); } catch (e) { console.error("lowres failed:", e); }
+
+// =========================================================================
+// Verbal companion
+// =========================================================================
+
+function setVerbal(input) {
+  document.getElementById("verbal-input").textContent = input;
+  setHallmark(document.getElementById("verbal-hm"), input);
+  document.getElementById("verbal-words").textContent = hallmarkWords(input).join(" ");
+}
+setVerbal("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq");
+document.getElementById("btn-verbal-randomize").addEventListener("click", () => {
+  setVerbal(randomString(34));
+});
+
+</script>
+
+</body>
+</html>
