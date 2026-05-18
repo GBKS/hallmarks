@@ -359,6 +359,20 @@ button.action.subtle:hover { color: var(--ink); }
   margin-bottom: 14px;
 }
 
+.compare-table .cell .frame .randomart {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f5f4f0;
+  color: #4a4a48;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 9px;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-align: left;
+}
+
 .compare-table .cell .name {
   font-size: 13px;
   color: var(--ink-soft);
@@ -859,11 +873,11 @@ footer.site a:hover { color: var(--ink); }
   <div class="industries-list" id="industries-list"></div>
 </section>
 
-<!-- ============ HOW IT COMPARES ============ -->
+<!-- ============ HISTORY ============ -->
 <section>
   <div class="section-intro">
-    <h2>How it compares to prior art</h2>
-    <p>The same input, rendered by four different identicon systems. Hallmarks are designed specifically for visual matching — symmetric, perceptually-tuned colors, optimized for small sizes, with a verbal and pixel-art companion built in.</p>
+    <h2>A short history of visual fingerprints</h2>
+    <p>Long before crypto wallets, people needed a quick way to compare long opaque strings without reading every character. The tools changed across eras, but the goal stayed the same: reduce human error when two systems must agree.</p>
   </div>
   <div class="compare-table" id="compare-table"></div>
 </section>
@@ -1254,11 +1268,10 @@ for (const ind of INDUSTRIES) {
 }
 
 // =========================================================================
-// Compare row (Hallmarks vs. Blockies vs. Jdenticon-like vs. GitHub-like)
+// History row
 //
-// Lightweight in-page approximations of the visual style of each system,
-// not byte-faithful implementations. Real libraries would be linked from
-// CDN; recreations keep the page self-contained.
+// Lightweight in-page approximations for each era's visual style,
+// included for context rather than byte-faithful reproduction.
 // =========================================================================
 
 const COMPARE_INPUT = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
@@ -1373,11 +1386,43 @@ function githubLike(input, size = 96) {
   return parts.join("");
 }
 
+function sshRandomartLike(input) {
+  const r = rng(strHash(input + ":ssh-randomart"));
+  const chars = " .o+=*BOX@%&#/^";
+  const width = 17;
+  const height = 9;
+  const rows = [];
+  for (let y = 0; y < height; y++) {
+    let line = "";
+    for (let x = 0; x < width; x++) {
+      line += chars[Math.floor(r() * chars.length)];
+    }
+    rows.push(line);
+  }
+  return `<pre class="randomart" aria-label="SSH randomart-style fingerprint">+-----------------+\n|${rows.join("|\n|")}|\n+-----------------+</pre>`;
+}
+
 const compareEntries = [
-  { name: "Blockies",  note: "8×8, vivid HSL",      svg: blockiesLike(COMPARE_INPUT) },
-  { name: "Jdenticon-style", note: "Rotated shapes", svg: jdenticonLike(COMPARE_INPUT) },
-  { name: "GitHub-style", note: "5×5, single color", svg: githubLike(COMPARE_INPUT) },
-  { name: "Hallmarks", note: "5×7, OKLCH, words, pixels", isHallmark: true },
+  {
+    name: "SSH randomart",
+    note: "Key fingerprints in terminal UIs (2008)",
+    html: sshRandomartLike(COMPARE_INPUT),
+  },
+  {
+    name: "Web identicons",
+    note: "Deterministic account visuals for avatars",
+    svg: githubLike(COMPARE_INPUT),
+  },
+  {
+    name: "Wallet-era marks",
+    note: "Address checks where mismatch costs are immediate",
+    svg: blockiesLike(COMPARE_INPUT),
+  },
+  {
+    name: "Hallmarks",
+    note: "Standard-first: cross-platform, accessible, low-res",
+    isHallmark: true,
+  },
 ];
 
 const ct = document.getElementById("compare-table");
@@ -1393,6 +1438,8 @@ for (const e of compareEntries) {
     wrap.querySelector("svg").style.width = "82px";
     wrap.querySelector("svg").style.height = "auto";
     frame.appendChild(wrap);
+  } else if (e.html) {
+    frame.innerHTML = e.html;
   } else {
     frame.innerHTML = e.svg;
     const svg = frame.querySelector("svg");
