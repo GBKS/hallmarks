@@ -14,9 +14,20 @@ import { BIP39_ENGLISH } from "./bip39-english";
 
 export type HallmarkStyle = "standard" | "high-contrast" | "monochrome";
 
+/**
+ * Rendering polarity. `"light"` is the default (light background, dark dots).
+ * `"dark"` uses a dark background with lighter dots. Mode is a render-time
+ * input chosen by the host — typically from the OS theme — and MUST NOT be
+ * derived from the input string. Same input + same style + same mode always
+ * produces byte-identical output.
+ */
+export type HallmarkMode = "light" | "dark";
+
 export interface HallmarkOptions {
   /** Visual style. Defaults to "standard". */
   style?: HallmarkStyle;
+  /** Rendering polarity. Defaults to "light". */
+  mode?: HallmarkMode;
   /** Draw a 1-unit border in the primary color. Defaults to false. */
   bordered?: boolean;
 }
@@ -43,6 +54,7 @@ export interface HallmarkSpec {
   /** Single-string form, space-separated. */
   wordsText: string;
   style: HallmarkStyle;
+  mode: HallmarkMode;
   bordered: boolean;
 }
 
@@ -66,22 +78,23 @@ const ACCENT_THRESHOLD = 0.85;
 
 const MAX_PATTERN_ATTEMPTS = 8;
 
-// OKLCH parameters per style. Order: [L, C].
-const STYLE_PARAMS: Record<HallmarkStyle, { bg: [number, number]; fg: [number, number]; ac: [number, number] }> = {
+type ModeParams = { bg: [number, number]; fg: [number, number]; ac: [number, number] };
+
+// OKLCH parameters per style × mode. Each entry is [L, C].
+// Light rows are frozen from v1.0 — do not modify their values.
+// Dark rows re-anchor polarity while preserving hue; see SPEC §4.
+const STYLE_PARAMS: Record<HallmarkStyle, Record<HallmarkMode, ModeParams>> = {
   "standard": {
-    bg: [0.96, 0.025],
-    fg: [0.52, 0.16],
-    ac: [0.66, 0.18],
+    light: { bg: [0.96, 0.025], fg: [0.52, 0.16], ac: [0.66, 0.18] },
+    dark:  { bg: [0.30, 0.008], fg: [0.68, 0.10], ac: [0.74, 0.12] },
   },
   "high-contrast": {
-    bg: [0.98, 0.04],
-    fg: [0.28, 0.32],
-    ac: [0.15, 0.40],
+    light: { bg: [0.98, 0.04],  fg: [0.28, 0.32], ac: [0.15, 0.40] },
+    dark:  { bg: [0.25, 0.01],  fg: [0.82, 0.08], ac: [0.70, 0.11] },
   },
   "monochrome": {
-    bg: [0.96, 0.0],
-    fg: [0.30, 0.0],
-    ac: [0.30, 0.0],
+    light: { bg: [0.96, 0.0],   fg: [0.30, 0.0],  ac: [0.30, 0.0]  },
+    dark:  { bg: [0.26, 0.0],   fg: [0.82, 0.0],  ac: [0.82, 0.0]  },
   },
 };
 
@@ -328,14 +341,14 @@ function deriveHashHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function deriveColors(bytes: Uint8Array, style: HallmarkStyle): { bg: OklchColor; fg: OklchColor; ac: OklchColor } {
+function deriveColors(bytes: Uint8Array, style: HallmarkStyle, mode: HallmarkMode): { bg: OklchColor; fg: OklchColor; ac: OklchColor } {
   // Primary hue (bytes 0..1)
   const h1 = ((bytes[0] << 8) | bytes[1]) / 65536 * 360;
   // Accent offset (bytes 2..3) → 100..260°
   const offsetRaw = ((bytes[2] << 8) | bytes[3]) / 65536;
   const h2 = (h1 + 100 + offsetRaw * 160) % 360;
 
-  const params = STYLE_PARAMS[style];
+  const params = STYLE_PARAMS[style][mode];
   const hueA = style === "monochrome" ? 0 : h1;
   const hueB = style === "monochrome" ? 0 : h2;
 
@@ -383,11 +396,12 @@ function deriveWords(bytes: Uint8Array): [string, string, string] {
 
 export function hallmarkSpec(input: string, opts: HallmarkOptions = {}): HallmarkSpec {
   const style: HallmarkStyle = opts.style ?? "standard";
+  const mode: HallmarkMode = opts.mode ?? "light";
   const bordered = opts.bordered ?? false;
 
   const bytes = sha256(utf8Bytes(input));
   const cells = generatePattern(bytes);
-  const { bg, fg, ac } = deriveColors(bytes, style);
+  const { bg, fg, ac } = deriveColors(bytes, style, mode);
   const words = deriveWords(bytes);
 
   return {
@@ -398,6 +412,7 @@ export function hallmarkSpec(input: string, opts: HallmarkOptions = {}): Hallmar
     words,
     wordsText: words.join(" "),
     style,
+    mode,
     bordered,
   };
 }
@@ -424,9 +439,10 @@ export interface HallmarkPixelGrid {
   height: 20;
   /** 14×20 = 280 values, row-major. Each value is 0, 1, or 2. */
   pixels: Uint8Array;
-  /** Resolved per the selected style (default: "standard"). */
+  /** Resolved per the selected style and mode (defaults: "standard", "light"). */
   colors: { background: OklchColor; primary: OklchColor; accent: OklchColor };
   style: HallmarkStyle;
+  mode: HallmarkMode;
 }
 
 /**
@@ -443,7 +459,8 @@ export interface HallmarkPixelGrid {
  */
 export function hallmarkPixels(input: string, opts: HallmarkOptions = {}): HallmarkPixelGrid {
   const style: HallmarkStyle = opts.style ?? "standard";
-  const spec = hallmarkSpec(input, { style });
+  const mode: HallmarkMode = opts.mode ?? "light";
+  const spec = hallmarkSpec(input, { style, mode });
   const pixels = new Uint8Array(14 * 20);
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLUMNS; x++) {
@@ -471,6 +488,7 @@ export function hallmarkPixels(input: string, opts: HallmarkOptions = {}): Hallm
     pixels,
     colors: { background: spec.background, primary: spec.primary, accent: spec.accent },
     style,
+    mode,
   };
 }
 

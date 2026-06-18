@@ -496,6 +496,76 @@ button.action.subtle:hover { color: var(--ink); }
   .ind-match .symbol { transform: rotate(90deg); }
 }
 
+/* ===== Dark mode section ===== */
+.dark-mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.dm-btn {
+  padding: 6px 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.dm-btn.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.dark-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.dm-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.dm-cell .hm-wrap { width: 60px; }
+.dm-cell .hm-wrap svg { width: 100%; display: block; }
+.dm-cell .dm-label {
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-transform: capitalize;
+}
+.dark-mode-compare {
+  display: flex;
+  gap: 12px;
+}
+.dmc-band {
+  flex: 1;
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dmc-band.light { background: #f0f0ef; }
+.dmc-band.dark  { background: #000; }
+.dmc-band-label { font-size: 12px; margin-bottom: 4px; }
+.dmc-band.light .dmc-band-label { color: #888; }
+.dmc-band.dark  .dmc-band-label { color: #555; }
+.dmc-row { display: flex; align-items: center; gap: 10px; }
+.dmc-row .hm-wrap { width: 44px; }
+.dmc-row .hm-wrap svg { width: 100%; display: block; }
+.dark-mode-compare-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+}
+@media (max-width: 540px) {
+  .dark-mode-grid { grid-template-columns: 1fr; }
+  .dark-mode-compare { flex-direction: column; }
+}
+
 /* ===== Styles section ===== */
 .styles-row {
   display: grid;
@@ -889,6 +959,21 @@ footer.site a:hover { color: var(--ink); }
     <p>The same pattern, rendered for different display environments. Monochrome uses shape (circle vs. rounded square) to carry the third value when color isn't available.</p>
   </div>
   <div class="styles-row" id="styles-row"></div>
+</section>
+
+<!-- ============ DARK MODE ============ -->
+<section>
+  <div class="section-intro">
+    <h2>Light and dark mode</h2>
+    <p>Mode is orthogonal to style — every style renders in both light and dark. The pattern and hues are identical; only the palette changes. The three-word companion is fully mode-invariant, making it the clearest anchor when comparing across a light-mode phone and a dark hardware wallet.</p>
+  </div>
+  <div class="dark-mode-toggle">
+    <button class="dm-btn active" id="dm-light-btn" onclick="setDemoMode('light')">Light</button>
+    <button class="dm-btn" id="dm-dark-btn" onclick="setDemoMode('dark')">Dark</button>
+  </div>
+  <div class="dark-mode-grid" id="dark-mode-grid"></div>
+  <p class="dark-mode-compare-label">Light and dark side by side, each on its own background:</p>
+  <div class="dark-mode-compare" id="dark-mode-compare"></div>
 </section>
 
 <!-- ============ BORDERS ============ -->
@@ -1467,6 +1552,63 @@ for (const d of STYLE_DEMOS) {
   setHallmark(el.querySelector(".hm-wrap"), STYLE_INPUT, { style: d.style });
   stylesRow.appendChild(el);
 }
+
+// =========================================================================
+// Dark mode demo
+// =========================================================================
+
+const DM_INPUTS = [
+  "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+  "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8",
+  "9d2c5e85e9b9f5e7b0a0c0d4f1a2b3c4d5e6f7a8",
+];
+const DM_STYLES = ["standard", "high-contrast", "monochrome"];
+
+let currentDemoMode = "light";
+
+const dmGrid = document.getElementById("dark-mode-grid");
+const dmCompare = document.getElementById("dark-mode-compare");
+
+function buildDarkModeGrid(mode) {
+  dmGrid.replaceChildren();
+  for (const style of DM_STYLES) {
+    const el = document.createElement("div");
+    el.className = "dm-cell";
+    el.innerHTML = `<div class="hm-wrap"></div><div class="dm-label">${style.replace("-", " ")}</div>`;
+    setHallmark(el.querySelector(".hm-wrap"), DM_INPUTS[0], { style, mode });
+    dmGrid.appendChild(el);
+  }
+}
+
+function buildDarkModeCompare() {
+  dmCompare.replaceChildren();
+  for (const mode of ["light", "dark"]) {
+    const band = document.createElement("div");
+    band.className = `dmc-band ${mode}`;
+    const lbl = document.createElement("div");
+    lbl.className = "dmc-band-label";
+    lbl.textContent = mode;
+    band.appendChild(lbl);
+    for (const input of DM_INPUTS) {
+      const row = document.createElement("div");
+      row.className = "dmc-row";
+      row.innerHTML = `<div class="hm-wrap"></div>`;
+      setHallmark(row.querySelector(".hm-wrap"), input, { mode });
+      band.appendChild(row);
+    }
+    dmCompare.appendChild(band);
+  }
+}
+
+window.setDemoMode = function(mode) {
+  currentDemoMode = mode;
+  document.getElementById("dm-light-btn").classList.toggle("active", mode === "light");
+  document.getElementById("dm-dark-btn").classList.toggle("active", mode === "dark");
+  buildDarkModeGrid(mode);
+};
+
+buildDarkModeGrid("light");
+buildDarkModeCompare();
 
 // =========================================================================
 // Borders

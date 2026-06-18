@@ -27,6 +27,7 @@ const INPUTS: Array<{ label: string; input: string }> = [
 ];
 
 const STYLES = ["standard", "high-contrast", "monochrome"] as const;
+const MODES = ["light", "dark"] as const;
 
 const vectors = INPUTS.map(({ label, input }) => {
   const sha = bytesToHex(_internals.sha256(new TextEncoder().encode(input)));
@@ -36,24 +37,27 @@ const vectors = INPUTS.map(({ label, input }) => {
   const words = stdSpec.words;
   const pixelsArray = Array.from(hallmarkPixels(input).pixels);
 
-  // For each style, capture the three colors.
+  // For each style × mode, capture the three colors.
   const colors: Record<string, any> = {};
   for (const style of STYLES) {
-    const spec = hallmarkSpec(input, { style });
-    colors[style] = {
-      background: {
-        L: round(spec.background.L), C: round(spec.background.C), h: round(spec.background.h),
-        hex: spec.background.hex,
-      },
-      primary: {
-        L: round(spec.primary.L), C: round(spec.primary.C), h: round(spec.primary.h),
-        hex: spec.primary.hex,
-      },
-      accent: {
-        L: round(spec.accent.L), C: round(spec.accent.C), h: round(spec.accent.h),
-        hex: spec.accent.hex,
-      },
-    };
+    colors[style] = {};
+    for (const mode of MODES) {
+      const spec = hallmarkSpec(input, { style, mode });
+      colors[style][mode] = {
+        background: {
+          L: round(spec.background.L), C: round(spec.background.C), h: round(spec.background.h),
+          hex: spec.background.hex,
+        },
+        primary: {
+          L: round(spec.primary.L), C: round(spec.primary.C), h: round(spec.primary.h),
+          hex: spec.primary.hex,
+        },
+        accent: {
+          L: round(spec.accent.L), C: round(spec.accent.C), h: round(spec.accent.h),
+          hex: spec.accent.hex,
+        },
+      };
+    }
   }
 
   return {
@@ -93,7 +97,7 @@ const out = {
   license: "CC0-1.0",
   license_note: "These test vectors are dedicated to the public domain under CC0 1.0 Universal. See LICENSE.",
   generator: "hallmark.ts reference implementation",
-  note: "Each implementation conforms to Hallmarks v1.0 if and only if it reproduces every entry below exactly.",
+  note: "Each implementation conforms to Hallmarks v1.0 if and only if it reproduces every entry below exactly. Colors are keyed by style then mode (light/dark). Conformance requires reproducing both light and dark palettes for all three styles.",
   vectors,
 };
 

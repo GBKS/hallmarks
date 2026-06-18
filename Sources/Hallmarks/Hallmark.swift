@@ -101,6 +101,15 @@ public enum HallmarkStyle: Equatable {
     case monochrome
 }
 
+/// Rendering polarity. `.light` is the default (light background, dark dots).
+/// `.dark` uses a dark background with lighter dots. Mode is a render-time
+/// input chosen by the host — typically from the OS theme — and MUST NOT be
+/// derived from the input string.
+public enum HallmarkMode: Equatable {
+    case light
+    case dark
+}
+
 /// A deterministic visual mark for any string identifier — crypto address,
 /// key fingerprint, commit SHA, anything you'd otherwise verify character
 /// by character. See https://hallmarks.info for the full spec.
@@ -117,16 +126,18 @@ public enum HallmarkStyle: Equatable {
 public struct Hallmark: View {
     let input: String
     let style: HallmarkStyle
+    let mode: HallmarkMode
     let bordered: Bool
 
-    public init(input: String, style: HallmarkStyle = .standard, bordered: Bool = false) {
+    public init(input: String, style: HallmarkStyle = .standard, mode: HallmarkMode = .light, bordered: Bool = false) {
         self.input = input
         self.style = style
+        self.mode = mode
         self.bordered = bordered
     }
 
     public var body: some View {
-        let spec = HallmarkSpec(input: input, style: style, bordered: bordered)
+        let spec = HallmarkSpec(input: input, style: style, mode: mode, bordered: bordered)
         HallmarkCanvas(spec: spec)
             .aspectRatio(HallmarkSpec.aspectRatio, contentMode: .fit)
             .accessibilityLabel("Hallmark")
@@ -153,35 +164,28 @@ private enum SpecConstants {
 
     static let maxPatternAttempts = 8
 
-    // OKLCH parameters for standard style
-    enum Standard {
-        static let backgroundLightness: Double = 0.96
-        static let backgroundChroma: Double = 0.025
-        static let foregroundLightness: Double = 0.52
-        static let foregroundChroma: Double = 0.16
-        static let accentLightness: Double = 0.66
-        static let accentChroma: Double = 0.18
+    struct Palette {
+        let bgL: Double; let bgC: Double
+        let fgL: Double; let fgC: Double
+        let acL: Double; let acC: Double
     }
 
-    // OKLCH parameters for high-contrast style
-    enum HighContrast {
-        static let backgroundLightness: Double = 0.98
-        static let backgroundChroma: Double = 0.04
-        static let foregroundLightness: Double = 0.28
-        static let foregroundChroma: Double = 0.32
-        static let accentLightness: Double = 0.15
-        static let accentChroma: Double = 0.40
-    }
-
-    // Monochrome parameters (grayscale)
-    enum Monochrome {
-        static let backgroundLightness: Double = 0.96
-        static let backgroundChroma: Double = 0.0
-        static let foregroundLightness: Double = 0.30
-        static let foregroundChroma: Double = 0.0
-        static let accentLightness: Double = 0.30
-        static let accentChroma: Double = 0.0
-    }
+    // OKLCH parameters per style × mode. Light rows are frozen from v1.0.
+    // Dark rows re-anchor polarity; see SPEC §4.
+    static let palettes: [HallmarkStyle: [HallmarkMode: Palette]] = [
+        .standard: [
+            .light: Palette(bgL: 0.96, bgC: 0.025, fgL: 0.52, fgC: 0.16, acL: 0.66, acC: 0.18),
+            .dark:  Palette(bgL: 0.30, bgC: 0.008, fgL: 0.68, fgC: 0.10, acL: 0.74, acC: 0.12),
+        ],
+        .highContrast: [
+            .light: Palette(bgL: 0.98, bgC: 0.04,  fgL: 0.28, fgC: 0.32, acL: 0.15, acC: 0.40),
+            .dark:  Palette(bgL: 0.25, bgC: 0.01,  fgL: 0.82, fgC: 0.08, acL: 0.70, acC: 0.11),
+        ],
+        .monochrome: [
+            .light: Palette(bgL: 0.96, bgC: 0.0,   fgL: 0.30, fgC: 0.0,  acL: 0.30, acC: 0.0),
+            .dark:  Palette(bgL: 0.26, bgC: 0.0,   fgL: 0.82, fgC: 0.0,  acL: 0.82, acC: 0.0),
+        ],
+    ]
 
     // Border width for all styles
     static let borderWidth: CGFloat = 1.0
@@ -199,6 +203,7 @@ struct HallmarkSpec: Equatable {
     let accentColor: Color
     let borderColor: Color
     let style: HallmarkStyle
+    let mode: HallmarkMode
     let bordered: Bool
 
     /// Tile width-to-height ratio. With 10% padding on each side and a 5×7
@@ -210,8 +215,9 @@ struct HallmarkSpec: Equatable {
         return 1.0 / height
     }()
 
-    init(input: String, style: HallmarkStyle = .standard, bordered: Bool = false) {
+    init(input: String, style: HallmarkStyle = .standard, mode: HallmarkMode = .light, bordered: Bool = false) {
         self.style = style
+        self.mode = mode
         self.bordered = bordered
 
         // SHA-256 of the input. Strong avalanche means a one-character typo
@@ -230,33 +236,17 @@ struct HallmarkSpec: Equatable {
         let h2offset = 100.0 + offsetRaw * 160.0
         let h2 = (h1 + h2offset).truncatingRemainder(dividingBy: 360.0)
 
-        // Select color parameters based on style
-        let (bgL, bgC, fgL, fgC, acL, acC): (Double, Double, Double, Double, Double, Double)
-        switch style {
-        case .standard:
-            (bgL, bgC) = (SpecConstants.Standard.backgroundLightness, SpecConstants.Standard.backgroundChroma)
-            (fgL, fgC) = (SpecConstants.Standard.foregroundLightness, SpecConstants.Standard.foregroundChroma)
-            (acL, acC) = (SpecConstants.Standard.accentLightness, SpecConstants.Standard.accentChroma)
-        case .highContrast:
-            (bgL, bgC) = (SpecConstants.HighContrast.backgroundLightness, SpecConstants.HighContrast.backgroundChroma)
-            (fgL, fgC) = (SpecConstants.HighContrast.foregroundLightness, SpecConstants.HighContrast.foregroundChroma)
-            (acL, acC) = (SpecConstants.HighContrast.accentLightness, SpecConstants.HighContrast.accentChroma)
-        case .monochrome:
-            (bgL, bgC) = (SpecConstants.Monochrome.backgroundLightness, SpecConstants.Monochrome.backgroundChroma)
-            (fgL, fgC) = (SpecConstants.Monochrome.foregroundLightness, SpecConstants.Monochrome.foregroundChroma)
-            (acL, acC) = (SpecConstants.Monochrome.accentLightness, SpecConstants.Monochrome.accentChroma)
-        }
+        // Select color parameters based on style × mode
+        let palette = SpecConstants.palettes[style]![mode]!
 
         // For monochrome, use neutral hue (0°) since chroma is 0 anyway
         let hueToUse = style == .monochrome ? 0.0 : h1
         let accentHueToUse = style == .monochrome ? 0.0 : h2
 
-        self.backgroundColor = Color(oklch: (L: bgL, C: bgC, h: hueToUse))
-        self.foregroundColor = Color(oklch: (L: fgL, C: fgC, h: hueToUse))
-        self.accentColor = Color(oklch: (L: acL, C: acC, h: accentHueToUse))
+        self.backgroundColor = Color(oklch: (L: palette.bgL, C: palette.bgC, h: hueToUse))
+        self.foregroundColor = Color(oklch: (L: palette.fgL, C: palette.fgC, h: hueToUse))
+        self.accentColor = Color(oklch: (L: palette.acL, C: palette.acC, h: accentHueToUse))
 
-        // Border color: for colored styles, use the foreground color
-        // For monochrome, use the same foreground gray
         self.borderColor = self.foregroundColor
 
         // --- Pattern ---
