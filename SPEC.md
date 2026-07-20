@@ -40,6 +40,7 @@ The visual and the verbal are designed to be used together: the visual provides 
 | **Pattern** | The complete 5×7 grid of cell values. |
 | **Fill ratio** | The proportion of non-zero cells in the half-grid, used to enforce visual density. |
 | **Style** | One of `standard`, `high-contrast`, or `monochrome`; selects the OKLCH color parameters and (for monochrome) the rendering technique for the accent value. |
+| **Mode** | One of `light` or `dark`; selects the rendering polarity (light background vs. dark background). Mode is a **render-time input** chosen by the host — typically from the OS theme — and MUST NOT be inferred from the input string. The library default is `light`. |
 | **Verbal companion** | A three-word string derived from the hash using the BIP-39 English wordlist. |
 | **Low-res rendering** | The exact 14×20 pixel raster representation of the pattern. |
 
@@ -312,39 +313,70 @@ For the colored styles, the §3.2 OKLCH triple is resolved using the style's L/C
 
 ---
 
-## 4. Style variants
+## 4. Style variants and dark mode
 
-Three styles are defined. Each style specifies OKLCH lightness and chroma values for the three colors (background, primary, accent); the hues are derived per §3.2.
+Style and mode are two independent axes. **Style** controls color richness and how the accent value is carried. **Mode** controls rendering polarity (light surface vs. dark surface). The result is a 3×2 table of six frozen palettes.
+
+### 4.0 Normative requirements for dark mode
+
+The following rules apply to all conformant implementations:
+
+1. **Hue is mode-independent.** `h1` and `h2` are derived from the hash exactly as specified in §3.2 and are identical in light and dark mode. Implementations MUST NOT modify hue derivation based on mode.
+2. **Pattern is mode-independent.** The same cells, positions, and 5×7 grid — including the 14×20 low-res layout — are emitted regardless of mode. Mode MUST NOT affect pattern generation.
+3. **Mode changes only the L and C values** used to resolve OKLCH triples into colors. All structural output (cells, pixels, words) is unaffected.
+4. **Dark mode MUST be produced by selecting the dark palette for the chosen style.** It MUST NOT be produced by inverting colors, swapping foreground and background, or applying any transform to the light-mode colors. In particular, `filter: invert()` and a background/foreground color swap are explicitly non-conformant, even when they produce visually similar results for some hues.
+5. **Mode is a render-time input, not hash-derived.** Implementations MUST default to `light`. Implementations SHOULD NOT infer mode from the input string. Same input + same style + same mode → byte-identical output on every platform.
+
+### 4.0.1 Dark-mode palette derivation principle
+
+Dark mode re-anchors polarity while preserving the perceptual gap and hue distinctness of the light style:
+
+- **Background chroma is reduced in dark mode.** A chroma of C 0.025 reads as a clean pastel at L 0.96 but appears muddy (and hue-dependently brownish) at L 0.20. Dark backgrounds MUST use near-neutral chroma (C ≤ 0.01) or 0.
+- **Foreground and accent chroma are slightly increased vs. light.** Perceived colorfulness drops on dark grounds; equal OKLCH chroma does not read as equal saturation. A small increase keeps the two hues as distinct as they appear in light mode.
+- **The primary/accent distinction is carried by size and shape in dark mode.** The §3.5 15% size difference (and monochrome's circle-vs-square) is mode-invariant. Implementations SHOULD NOT attempt to replicate the light-mode "accent is brighter" relationship in dark mode; size, chroma, and the distinct h2 carry the distinction.
 
 ### 4.1 Standard
 
-The default style. Soft tinted background, mid-lightness primary dots, slightly brighter accent dots.
+The default style. Soft tinted background, mid-lightness dots in light mode; dark neutral background, light dots in dark mode.
 
-| Color | L | C |
-|---|---|---|
-| Background | 0.96 | 0.025 |
-| Primary | 0.52 | 0.16 |
-| Accent | 0.66 | 0.18 |
+| Mode | Color | L | C |
+|---|---|---|---|
+| **light** | Background | 0.96 | 0.025 |
+| **light** | Primary | 0.52 | 0.16 |
+| **light** | Accent | 0.66 | 0.18 |
+| **dark** | Background | 0.30 | 0.008 |
+| **dark** | Primary | 0.68 | 0.10 |
+| **dark** | Accent | 0.74 | 0.12 |
 
 ### 4.2 High contrast
 
-For environments where extra contrast is needed (sunlight, low-quality displays, vision impairment). Background near white, primary near black, accent very saturated.
+For environments where extra contrast is needed (sunlight, low-quality displays, vision impairment). Light mode: near-white background, near-black primary, very saturated accent. Dark mode: very dark background, near-white primary, high-chroma accent.
 
-| Color | L | C |
-|---|---|---|
-| Background | 0.98 | 0.04 |
-| Primary | 0.28 | 0.32 |
-| Accent | 0.15 | 0.40 |
+| Mode | Color | L | C |
+|---|---|---|---|
+| **light** | Background | 0.98 | 0.04 |
+| **light** | Primary | 0.28 | 0.32 |
+| **light** | Accent | 0.15 | 0.40 |
+| **dark** | Background | 0.25 | 0.01 |
+| **dark** | Primary | 0.82 | 0.08 |
+| **dark** | Accent | 0.70 | 0.11 |
 
 ### 4.3 Monochrome
 
-Grayscale. Hue is set to 0°; chroma is 0. The primary/accent distinction is carried by shape (circle vs. rounded square) instead of color.
+Grayscale. Hue is set to 0°; chroma is 0. The primary/accent distinction is carried by shape (circle vs. rounded square) instead of color. In dark mode, primary L equals accent L (mirroring light mode), because shape carries the distinction.
 
-| Color | L | C |
-|---|---|---|
-| Background | 0.96 | 0.0 |
-| Primary | 0.30 | 0.0 |
-| Accent | 0.30 | 0.0 |
+| Mode | Color | L | C |
+|---|---|---|---|
+| **light** | Background | 0.96 | 0.0 |
+| **light** | Primary | 0.30 | 0.0 |
+| **light** | Accent | 0.30 | 0.0 |
+| **dark** | Background | 0.26 | 0.0 |
+| **dark** | Primary | 0.82 | 0.0 |
+| **dark** | Accent | 0.82 | 0.0 |
+
+### 4.4 Cross-mode comparison
+
+A mark rendered in light mode and the same mark rendered in dark mode are not pixel-identical by design. The cross-mode comparison anchors are the pattern (same cells), the hue family (same h1/h2), and the verbal companion (completely mode-invariant). The three-word verbal companion is the one channel fully immune to light/dark differences. Implementations SHOULD surface the verbal companion in cross-mode comparison flows — the common case is a light-mode phone screen compared against a dark hardware wallet display.
 
 ---
 
@@ -414,11 +446,11 @@ The reference test vectors live in `test-vectors.json` and cover, for each input
 
 - The SHA-256 hash (hex).
 - The 5×7 cell grid (as a 7-row array of 5 integers each).
-- The OKLCH triples for background, primary, and accent (under each style).
+- The OKLCH triples for background, primary, and accent, keyed by style then mode: `colors[style][mode].{background,primary,accent}.{L,C,h,hex}`. Each style entry contains both `"light"` and `"dark"` sub-entries covering all six palettes.
 - The three verbal companion words.
 - The 14×20 pixel grid (as a 20-row array of 14 integers each, where 0 = off, 1 = primary pixel, 2 = accent pixel).
 
-An implementation conforms to this specification if and only if it reproduces every test vector exactly.
+An implementation conforms to this specification if and only if it reproduces every test vector exactly. Conformance requires matching both light and dark color entries for all three styles — six palettes per input.
 
 The reference inputs include common Bitcoin address forms (P2PKH, P2SH, bech32 segwit, bech32m taproot), Ark addresses, an SSH key fingerprint, a Git commit SHA-1, a UUID, a long random string, and an empty string, to exercise the full input range.
 
@@ -459,13 +491,15 @@ At sizes below 22 px wide, the cells become smaller than typical pointer hit-tar
 
 ### 8.5 Determinism
 
-Conformant implementations are byte-deterministic: same input string in, same hallmark out, on every platform, for every release. This property is what makes Hallmarks usable for verification. Any change that breaks determinism is a breaking change and requires a new major version of this specification.
+Conformant implementations are byte-deterministic: same input string + same style + same mode → same hallmark out, on every platform, for every release. This property is what makes Hallmarks usable for verification. Mode and size are the only host-chosen render inputs; all other output is fully determined by the input string. Any change that breaks determinism is a breaking change and requires a new major version of this specification.
 
 ---
 
 ## 9. Versioning
 
 This specification is **Hallmarks v1.0**. Future versions may add output forms (e.g. an animated variant, a higher-resolution mode) but MUST NOT change the byte-level output of any existing form for any existing input. Test vectors from v1.0 MUST continue to match in v1.x.
+
+Dark mode (§4, modes `"light"` and `"dark"`) is additive within v1.x. It introduces no new forms and changes no existing output: every (input, style, `"light"`) combination produces byte-identical colors to the v1.0 single-mode output. Implementations that do not yet support dark mode continue to conform to v1.0 for all inputs they do handle.
 
 ---
 

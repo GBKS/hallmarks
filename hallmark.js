@@ -2065,19 +2065,16 @@ var ACCENT_THRESHOLD = 0.85;
 var MAX_PATTERN_ATTEMPTS = 8;
 var STYLE_PARAMS = {
   "standard": {
-    bg: [0.96, 0.025],
-    fg: [0.52, 0.16],
-    ac: [0.66, 0.18]
+    light: { bg: [0.96, 0.025], fg: [0.52, 0.16], ac: [0.66, 0.18] },
+    dark: { bg: [0.3, 8e-3], fg: [0.68, 0.1], ac: [0.74, 0.12] }
   },
   "high-contrast": {
-    bg: [0.98, 0.04],
-    fg: [0.28, 0.32],
-    ac: [0.15, 0.4]
+    light: { bg: [0.98, 0.04], fg: [0.28, 0.32], ac: [0.15, 0.4] },
+    dark: { bg: [0.25, 0.01], fg: [0.82, 0.08], ac: [0.7, 0.11] }
   },
   "monochrome": {
-    bg: [0.96, 0],
-    fg: [0.3, 0],
-    ac: [0.3, 0]
+    light: { bg: [0.96, 0], fg: [0.3, 0], ac: [0.3, 0] },
+    dark: { bg: [0.26, 0], fg: [0.82, 0], ac: [0.82, 0] }
   }
 };
 var SHA256_K = new Uint32Array([
@@ -2310,11 +2307,11 @@ function generatePattern(bytes) {
 function utf8Bytes(s) {
   return new TextEncoder().encode(s);
 }
-function deriveColors(bytes, style) {
+function deriveColors(bytes, style, mode) {
   const h1 = (bytes[0] << 8 | bytes[1]) / 65536 * 360;
   const offsetRaw = (bytes[2] << 8 | bytes[3]) / 65536;
   const h2 = (h1 + 100 + offsetRaw * 160) % 360;
-  const params = STYLE_PARAMS[style];
+  const params = STYLE_PARAMS[style][mode];
   const hueA = style === "monochrome" ? 0 : h1;
   const hueB = style === "monochrome" ? 0 : h2;
   return {
@@ -2333,10 +2330,11 @@ function deriveWords(bytes) {
 }
 function hallmarkSpec(input, opts = {}) {
   const style = opts.style ?? "standard";
+  const mode = opts.mode ?? "light";
   const bordered = opts.bordered ?? false;
   const bytes = sha256(utf8Bytes(input));
   const cells = generatePattern(bytes);
-  const { bg, fg, ac } = deriveColors(bytes, style);
+  const { bg, fg, ac } = deriveColors(bytes, style, mode);
   const words = deriveWords(bytes);
   return {
     cells,
@@ -2346,6 +2344,7 @@ function hallmarkSpec(input, opts = {}) {
     words,
     wordsText: words.join(" "),
     style,
+    mode,
     bordered
   };
 }
@@ -2354,7 +2353,8 @@ function hallmarkWords(input) {
 }
 function hallmarkPixels(input, opts = {}) {
   const style = opts.style ?? "standard";
-  const spec = hallmarkSpec(input, { style });
+  const mode = opts.mode ?? "light";
+  const spec = hallmarkSpec(input, { style, mode });
   const pixels = new Uint8Array(14 * 20);
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLUMNS; x++) {
@@ -2379,7 +2379,8 @@ function hallmarkPixels(input, opts = {}) {
     height: 20,
     pixels,
     colors: { background: spec.background, primary: spec.primary, accent: spec.accent },
-    style
+    style,
+    mode
   };
 }
 var SVG_NS = "http://www.w3.org/2000/svg";

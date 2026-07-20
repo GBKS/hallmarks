@@ -1,7 +1,17 @@
 export type HallmarkStyle = "standard" | "high-contrast" | "monochrome";
+/**
+ * Rendering polarity. `"light"` is the default (light background, dark dots).
+ * `"dark"` uses a dark background with lighter dots. Mode is a render-time
+ * input chosen by the host — typically from the OS theme — and MUST NOT be
+ * derived from the input string. Same input + same style + same mode always
+ * produces byte-identical output.
+ */
+export type HallmarkMode = "light" | "dark";
 export interface HallmarkOptions {
     /** Visual style. Defaults to "standard". */
     style?: HallmarkStyle;
+    /** Rendering polarity. Defaults to "light". */
+    mode?: HallmarkMode;
     /** Draw a 1-unit border in the primary color. Defaults to false. */
     bordered?: boolean;
 }
@@ -26,6 +36,7 @@ export interface HallmarkSpec {
     /** Single-string form, space-separated. */
     wordsText: string;
     style: HallmarkStyle;
+    mode: HallmarkMode;
     bordered: boolean;
 }
 declare function sha256(bytes: Uint8Array): Uint8Array;
@@ -36,7 +47,7 @@ declare function mulberry32Init(bytes: Uint8Array, offset: number): PrngState;
 declare function mulberry32Next(state: PrngState): number;
 declare function oklchToRgb(L: number, C: number, h: number): [number, number, number];
 declare function generatePattern(bytes: Uint8Array): number[][];
-declare function deriveColors(bytes: Uint8Array, style: HallmarkStyle): {
+declare function deriveColors(bytes: Uint8Array, style: HallmarkStyle, mode: HallmarkMode): {
     bg: OklchColor;
     fg: OklchColor;
     ac: OklchColor;
@@ -54,13 +65,14 @@ export interface HallmarkPixelGrid {
     height: 20;
     /** 14×20 = 280 values, row-major. Each value is 0, 1, or 2. */
     pixels: Uint8Array;
-    /** Resolved per the selected style (default: "standard"). */
+    /** Resolved per the selected style and mode (defaults: "standard", "light"). */
     colors: {
         background: OklchColor;
         primary: OklchColor;
         accent: OklchColor;
     };
     style: HallmarkStyle;
+    mode: HallmarkMode;
 }
 /**
  * Returns the 14×20 pixel grid for the input. Pixel values encode the cell
