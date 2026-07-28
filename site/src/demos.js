@@ -301,27 +301,7 @@ buildDarkModeGrid("light");
 buildDarkModeCompare();
 
 // (Borders stage is now BordersSection.vue.)
-
-// =========================================================================
-// Gallery
-// =========================================================================
-
-const galleryEl = document.getElementById("gallery");
-function buildGallery() {
-  galleryEl.replaceChildren();
-  for (let i = 0; i < 24; i++) {
-    const input = randomString(34);
-    const el = document.createElement("div");
-    el.className = "g-item";
-    el.title = input;
-    el.innerHTML = `<div class="hm-wrap"></div>`;
-    setHallmark(el.querySelector(".hm-wrap"), input);
-    galleryEl.appendChild(el);
-  }
-}
-buildGallery();
-document.getElementById("btn-regen-gallery").addEventListener("click", buildGallery);
-
+// (Gallery is now GallerySection.vue.)
 // (Sizes row is now SizesSection.vue.)
 
 // =========================================================================
@@ -394,20 +374,7 @@ function buildLowres() {
 }
 try { buildLowres(); } catch (e) { console.error("lowres failed:", e); }
 
-// =========================================================================
-// Verbal companion
-// =========================================================================
-
-function setVerbal(input) {
-  document.getElementById("verbal-input").textContent = input;
-  setHallmark(document.getElementById("verbal-hm"), input);
-  document.getElementById("verbal-words").textContent = hallmarkWords(input).join(" ");
-}
-setVerbal("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq");
-document.getElementById("btn-verbal-randomize").addEventListener("click", () => {
-  setVerbal(randomString(34));
-});
-
+// (Verbal companion is now VerbalSection.vue.)
 
   // Dark-mode toggle (migrated from inline onclick="setDemoMode(...)")
   document.getElementById('dm-light-btn')?.addEventListener('click', () => window.setDemoMode('light'));
