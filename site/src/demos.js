@@ -242,64 +242,7 @@ for (const e of compareEntries) {
 }
 
 // (Styles row is now StylesSection.vue.)
-
-// =========================================================================
-// Dark mode demo
-// =========================================================================
-
-const DM_INPUTS = [
-  "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-  "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8",
-  "9d2c5e85e9b9f5e7b0a0c0d4f1a2b3c4d5e6f7a8",
-];
-const DM_STYLES = ["standard", "high-contrast", "monochrome"];
-
-let currentDemoMode = "light";
-
-const dmGrid = document.getElementById("dark-mode-grid");
-const dmCompare = document.getElementById("dark-mode-compare");
-
-function buildDarkModeGrid(mode) {
-  dmGrid.replaceChildren();
-  for (const style of DM_STYLES) {
-    const el = document.createElement("div");
-    el.className = "dm-cell";
-    el.innerHTML = `<div class="hm-wrap"></div><div class="dm-label">${style.replace("-", " ")}</div>`;
-    setHallmark(el.querySelector(".hm-wrap"), DM_INPUTS[0], { style, mode });
-    dmGrid.appendChild(el);
-  }
-}
-
-function buildDarkModeCompare() {
-  dmCompare.replaceChildren();
-  for (const mode of ["light", "dark"]) {
-    const band = document.createElement("div");
-    band.className = `dmc-band ${mode}`;
-    const lbl = document.createElement("div");
-    lbl.className = "dmc-band-label";
-    lbl.textContent = mode;
-    band.appendChild(lbl);
-    for (const input of DM_INPUTS) {
-      const row = document.createElement("div");
-      row.className = "dmc-row";
-      row.innerHTML = `<div class="hm-wrap"></div>`;
-      setHallmark(row.querySelector(".hm-wrap"), input, { mode });
-      band.appendChild(row);
-    }
-    dmCompare.appendChild(band);
-  }
-}
-
-window.setDemoMode = function(mode) {
-  currentDemoMode = mode;
-  document.getElementById("dm-light-btn").classList.toggle("active", mode === "light");
-  document.getElementById("dm-dark-btn").classList.toggle("active", mode === "dark");
-  buildDarkModeGrid(mode);
-};
-
-buildDarkModeGrid("light");
-buildDarkModeCompare();
-
+// (Dark mode demo is now DarkModeSection.vue.)
 // (Borders stage is now BordersSection.vue.)
 // (Gallery is now GallerySection.vue.)
 // (Sizes row is now SizesSection.vue.)
@@ -375,8 +318,4 @@ function buildLowres() {
 try { buildLowres(); } catch (e) { console.error("lowres failed:", e); }
 
 // (Verbal companion is now VerbalSection.vue.)
-
-  // Dark-mode toggle (migrated from inline onclick="setDemoMode(...)")
-  document.getElementById('dm-light-btn')?.addEventListener('click', () => window.setDemoMode('light'));
-  document.getElementById('dm-dark-btn')?.addEventListener('click', () => window.setDemoMode('dark'));
 }
