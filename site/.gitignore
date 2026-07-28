@@ -1,0 +1,6 @@
+node_modules
+dist
+.vite
+
+# Generated at build time by scripts/copy-assets.mjs (sources live at the repo root)
+public

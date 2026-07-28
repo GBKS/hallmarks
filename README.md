@@ -12,7 +12,7 @@ This repository contains:
 - [**`hallmark.ts`**](hallmark.ts) — TypeScript reference implementation. Bundles to a small ES module for the web; also runs in Node.
 - [**`Sources/Hallmarks/Hallmark.swift`**](Sources/Hallmarks/Hallmark.swift) — Swift reference implementation (SwiftUI), available as a SwiftPM package via `Package.swift` at the repo root.
 - [**`test-vectors.json`**](test-vectors.json) — frozen conformance vectors. An implementation conforms if it reproduces every vector exactly.
-- [**`index.html`**](index.html) — the project website (live at [hallmarks.info](https://hallmarks.info)).
+- [**`site/`**](site/) — the project website (Vite + Vue, prerendered to static HTML with vite-ssg), live at [hallmarks.info](https://hallmarks.info). Run `npm run dev` inside `site/`; it's deployed to GitHub Pages by [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 
 ## What it produces
 

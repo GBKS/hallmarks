@@ -28,33 +28,31 @@ jobs:
         with:
           node-version: "22"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            site/package-lock.json
 
-      - name: Install dependencies
+      - name: Install library dependencies
         run: npm ci
 
       - name: Build hallmark.js from hallmark.ts
         run: npm run build
 
-      - name: Run render test (smoke check)
-        run: npm run test-render
+      - name: Install site dependencies
+        run: npm ci
+        working-directory: site
 
-      - name: Stage _site directory
-        run: |
-          mkdir -p _site
-          rsync -a \
-            --exclude='_site' \
-            --exclude='node_modules' \
-            --exclude='.git' \
-            --exclude='.github' \
-            ./ _site/
-          # Disable Jekyll's default file-name processing so files starting with
-          # _ or . are served as-is.
-          touch _site/.nojekyll
+      - name: Build site and run render smoke test
+        # `verify` = build (prebuild copies favicon/og-image/SPEC/test-vectors/
+        # CNAME/.nojekyll into site/public; the @hallmark alias resolves to the
+        # hallmark.js built above) then the JSDOM render test against dist/.
+        run: npm run verify
+        working-directory: site
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: site/dist
 
   deploy:
     needs: build
