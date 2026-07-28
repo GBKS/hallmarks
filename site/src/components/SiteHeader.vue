@@ -1,7 +1,15 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { hallmarkSVG } from '@hallmark'
+
+// The wordmark is itself a hallmark of the brand name.
+const wordmarkSvg = computed(() => hallmarkSVG('hallmarks', { style: 'standard' }))
+</script>
+
 <template>
   <header class="site">
     <a class="wordmark" href="#" aria-label="Hallmarks home">
-      <svg viewBox="0 0 100 132" aria-hidden="true" id="wordmark-svg"></svg>
+      <span class="wordmark-mark" v-html="wordmarkSvg"></span>
       <span>Hallmarks</span>
     </a>
     <nav class="site">

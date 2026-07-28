@@ -15,11 +15,18 @@ import VerbalSection from './components/VerbalSection.vue'
 import UseItSection from './components/UseItSection.vue'
 import BackgroundSection from './components/BackgroundSection.vue'
 import SiteFooter from './components/SiteFooter.vue'
-// The live-demo engine, ported from the original inline <script>. It wires up
-// the interactive demos imperatively after the static markup has mounted.
+import { hallmarkSVG } from '@hallmark'
+// The remaining (not-yet-reactive) demos are still driven imperatively after
+// the static markup has mounted. Sections are being migrated to reactive Vue
+// components one at a time; this shrinks as that progresses.
 import { initDemos } from './demos.js'
 
 onMounted(() => {
+  // Favicon: a hallmark of the brand name, as a data: URL.
+  const svg = hallmarkSVG('hallmarks', { style: 'standard' })
+  const link = document.querySelector("link[rel='icon']")
+  if (link) link.setAttribute('href', 'data:image/svg+xml;utf8,' + encodeURIComponent(svg))
+
   initDemos()
 })
 </script>

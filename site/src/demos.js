@@ -54,89 +54,9 @@ function pick(arr, n) {
   return out;
 }
 
-// =========================================================================
-// Wordmark
-// =========================================================================
-
-document.getElementById("wordmark-svg").outerHTML =
-  hallmarkSVG("hallmarks", { style: "standard" })
-    .replace("<svg ", '<svg id="wordmark-svg" ');
-
-// =========================================================================
-// Favicon (data: URL from a hallmark of the brand name)
-// =========================================================================
-{
-  const svg = hallmarkSVG("hallmarks", { style: "standard" });
-  const dataUrl = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-  const link = document.querySelector("link[rel='icon']");
-  if (link) link.href = dataUrl;
-}
-
-// =========================================================================
-// Hero: two-pane verification
-// =========================================================================
-
-const inputA = document.getElementById("input-a");
-const inputB = document.getElementById("input-b");
-const hmA = document.getElementById("hm-a");
-const hmB = document.getElementById("hm-b");
-const wordsAEl = document.getElementById("words-a");
-const wordsBEl = document.getElementById("words-b");
-const indicator = document.getElementById("compare-indicator");
-const sym = document.getElementById("compare-symbol");
-const label = document.getElementById("compare-label");
-
-function renderVerify() {
-  const a = inputA.value;
-  const b = inputB.value;
-  setHallmark(hmA, a);
-  setHallmark(hmB, b);
-  wordsAEl.textContent = hallmarkWords(a).join(" ");
-  wordsBEl.textContent = hallmarkWords(b).join(" ");
-  if (a === b && a.length > 0) {
-    indicator.classList.add("match");
-    sym.textContent = "=";
-    label.textContent = "Match";
-  } else {
-    indicator.classList.remove("match");
-    sym.textContent = "≠";
-    label.textContent = a.length === 0 || b.length === 0 ? "Empty" : "No match";
-  }
-}
-
-inputA.addEventListener("input", renderVerify);
-inputB.addEventListener("input", renderVerify);
-
-document.getElementById("btn-typo").addEventListener("click", () => {
-  const orig = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
-  const typo = orig.slice(0, -1) + (orig.slice(-1) === "q" ? "r" : "q");
-  inputA.value = orig;
-  inputB.value = typo;
-  renderVerify();
-});
-
-document.getElementById("btn-iban-typo").addEventListener("click", () => {
-  // A pair of plausibly-similar German IBANs that differ by a single digit.
-  inputA.value = "DE89370400440532013000";
-  inputB.value = "DE89370400440532013009";
-  renderVerify();
-});
-
-document.getElementById("btn-randomize").addEventListener("click", () => {
-  inputA.value = randomString(34);
-  inputB.value = randomString(34);
-  renderVerify();
-});
-
-document.getElementById("btn-copy-a").addEventListener("click", () => {
-  inputB.value = inputA.value;
-  renderVerify();
-});
-
-// Initialize with the one-character-typo demo (most visceral first impression).
-inputA.value = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
-inputB.value = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdr";
-renderVerify();
+// NOTE: The wordmark, favicon, and hero two-pane verification are now reactive
+// Vue components (SiteHeader.vue, App.vue, HeroSection.vue + Hallmark.vue) and
+// were removed from this engine.
 
 // =========================================================================
 // What it's for cards
