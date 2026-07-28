@@ -369,6 +369,8 @@ button.action.subtle:hover { color: var(--ink); }
   display: block;
 }
 
+.compare-table .cell.hallmark-cell .hm-wrap { width: 82px; }
+.compare-table .cell.hallmark-cell .hm-wrap svg { width: 100%; height: auto; display: block; }
 .compare-table .cell.hallmark-cell { border-color: var(--accent); }
 .compare-table .cell.hallmark-cell .name { color: var(--accent); font-weight: 600; }
 
