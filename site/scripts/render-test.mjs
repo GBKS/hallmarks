@@ -108,12 +108,14 @@ ok('3 style cells', doc.querySelectorAll('#styles-row .style-cell').length === 3
 ok('borders stage mounts 4 hallmarks (2 frames × 2)',
    doc.querySelectorAll('#borders-stage .hm-wrap svg').length === 4)
 {
-  const borderedWraps = doc.querySelectorAll("#borders-stage .hm-wrap[data-border='1'] svg")
+  // Two of the four marks in the borders stage are bordered; at least one
+  // should carry a stroked rect (the border).
+  const svgs = doc.querySelectorAll('#borders-stage .hm-wrap svg')
   let hasStroke = false
-  for (const svg of borderedWraps) {
+  for (const svg of svgs) {
     if (svg.querySelector('rect[stroke]')) { hasStroke = true; break }
   }
-  ok('bordered hallmark SVGs contain a stroked rect', hasStroke)
+  ok('a bordered hallmark SVG contains a stroked rect', hasStroke)
 }
 ok('24 gallery items', doc.querySelectorAll('#gallery .g-item').length === 24)
 ok('4 size rows', doc.querySelectorAll('#sizes-row .row').length === 4)

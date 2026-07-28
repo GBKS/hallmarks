@@ -54,114 +54,10 @@ function pick(arr, n) {
   return out;
 }
 
-// NOTE: The wordmark, favicon, and hero two-pane verification are now reactive
-// Vue components (SiteHeader.vue, App.vue, HeroSection.vue + Hallmark.vue) and
-// were removed from this engine.
-
-// =========================================================================
-// What it's for cards
-// =========================================================================
-
-const CARDS = [
-  {
-    input: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-    title: "Crypto addresses",
-    label: "bc1qar0srrr7xfkv…wf5mdq",
-    desc: "Sender's screen vs. recipient's screen. Wallet vs. hardware-wallet display. The two should match before you sign.",
-  },
-  {
-    input: "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8",
-    title: "Key fingerprints",
-    label: "SHA256:nThbg6kXUpJWG…",
-    desc: "SSH host keys, PGP fingerprints, certificate hashes — the things you're supposed to verify out-of-band but rarely do.",
-  },
-  {
-    input: "9d2c5e85e9b9f5e7b0a0c0d4f1a2b3c4d5e6f7a8",
-    title: "Commit SHAs",
-    label: "9d2c5e85e9b9…",
-    desc: "What CI is building, what's deployed in prod, what the reviewer is looking at. Visual confirmation across systems.",
-  },
-];
-
-const cards = document.getElementById("cards");
-for (const card of CARDS) {
-  const el = document.createElement("div");
-  el.className = "card";
-  el.innerHTML = `
-    <div class="hm-row">
-      <div class="hm-wrap"></div>
-      <code>${card.label}</code>
-    </div>
-    <h3>${card.title}</h3>
-    <p>${card.desc}</p>
-  `;
-  setHallmark(el.querySelector(".hm-wrap"), card.input);
-  cards.appendChild(el);
-}
-
-// =========================================================================
-// Industries — three vignettes showing the verification moment
-// =========================================================================
-
-const INDUSTRIES = [
-  {
-    title: "Banking",
-    desc:  "An invoice arrives by email with the supplier's IBAN. The clerk types it into the banking portal. Both the invoice and the portal display the hallmark next to the IBAN — a glance confirms the destination before the wire is signed off.",
-    id:    "DE89370400440532013000",
-    short: "DE89 3704 0044 0532 0130 00",
-    a: { label: "Invoice (PDF)" },
-    b: { label: "Banking app" },
-  },
-  {
-    title: "Logistics & supply chain",
-    desc:  "A truck arrives at the warehouse. The dock worker compares the manifest on the tablet against the printed container label. If the hallmarks match, sign for receipt; if not, hold the shipment.",
-    id:    "MSCU5678123",
-    short: "MSCU 567 812 3",
-    a: { label: "Shipping manifest" },
-    b: { label: "Container label" },
-  },
-  {
-    title: "Software supply chain",
-    desc:  "CI builds a Docker image, pushes it, records the digest. Production pulls the image and surfaces the digest on the deploy dashboard. Operators glance: hallmarks match → the right image shipped to the right cluster.",
-    id:    "sha256:5e2c4ab87c3d1a9f6b04eed91c3aa28f51bf06d3e4a13a5b8efc1d92aa31e7d8",
-    short: "sha256:5e2c4ab8…aa31e7d8",
-    a: { label: "CI build" },
-    b: { label: "Production deploy" },
-  },
-];
-
-const indList = document.getElementById("industries-list");
-for (const ind of INDUSTRIES) {
-  const el = document.createElement("div");
-  el.className = "industry";
-  el.innerHTML = `
-    <div class="industry-header">
-      <h3>${ind.title}</h3>
-      <p>${ind.desc}</p>
-    </div>
-    <div class="industry-demo">
-      <div class="ind-panel">
-        <div class="ind-panel-label">${ind.a.label}</div>
-        <div class="ind-panel-body">
-          <div class="hm-wrap"></div>
-          <div class="ind-id">${ind.short}</div>
-        </div>
-      </div>
-      <div class="ind-match"><div class="symbol">=</div></div>
-      <div class="ind-panel">
-        <div class="ind-panel-label">${ind.b.label}</div>
-        <div class="ind-panel-body">
-          <div class="hm-wrap"></div>
-          <div class="ind-id">${ind.short}</div>
-        </div>
-      </div>
-    </div>
-  `;
-  const wraps = el.querySelectorAll(".ind-panel-body .hm-wrap");
-  setHallmark(wraps[0], ind.id);
-  setHallmark(wraps[1], ind.id);
-  indList.appendChild(el);
-}
+// NOTE: The wordmark, favicon, hero verification, "what it's for" cards, and
+// the industry vignettes are now reactive Vue components (SiteHeader.vue,
+// App.vue, HeroSection.vue, WhatForSection.vue, IndustriesSection.vue, all
+// using Hallmark.vue) and were removed from this engine.
 
 // =========================================================================
 // History row
@@ -345,24 +241,7 @@ for (const e of compareEntries) {
   ct.appendChild(el);
 }
 
-// =========================================================================
-// Styles row
-// =========================================================================
-
-const stylesRow = document.getElementById("styles-row");
-const STYLE_DEMOS = [
-  { style: "standard", desc: "OKLCH-tuned color pair." },
-  { style: "high-contrast", desc: "For sunlight, low-quality displays, vision impairment." },
-  { style: "monochrome", desc: "Shape replaces color for the third value." },
-];
-const STYLE_INPUT = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
-for (const d of STYLE_DEMOS) {
-  const el = document.createElement("div");
-  el.className = "style-cell";
-  el.innerHTML = `<div class="hm-wrap"></div><div class="style-name">${d.style.replace("-", " ")}</div><div class="style-desc">${d.desc}</div>`;
-  setHallmark(el.querySelector(".hm-wrap"), STYLE_INPUT, { style: d.style });
-  stylesRow.appendChild(el);
-}
+// (Styles row is now StylesSection.vue.)
 
 // =========================================================================
 // Dark mode demo
@@ -421,15 +300,7 @@ window.setDemoMode = function(mode) {
 buildDarkModeGrid("light");
 buildDarkModeCompare();
 
-// =========================================================================
-// Borders
-// =========================================================================
-
-const BORDERS_INPUT = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
-document.querySelectorAll("#borders-stage .hm-wrap").forEach((wrap) => {
-  const bordered = wrap.dataset.border === "1";
-  setHallmark(wrap, BORDERS_INPUT, { bordered });
-});
+// (Borders stage is now BordersSection.vue.)
 
 // =========================================================================
 // Gallery
@@ -451,33 +322,7 @@ function buildGallery() {
 buildGallery();
 document.getElementById("btn-regen-gallery").addEventListener("click", buildGallery);
 
-// =========================================================================
-// Sizes row
-// =========================================================================
-
-const sizesRow = document.getElementById("sizes-row");
-const SIZE_PX = [22, 28, 34, 48, 64];
-for (const addr of SAMPLE_ADDRESSES.slice(0, 4)) {
-  const row = document.createElement("div");
-  row.className = "row";
-  const sets = document.createElement("div");
-  sets.className = "hm-set";
-  for (const px of SIZE_PX) {
-    const wrap = document.createElement("div");
-    wrap.className = "hm-wrap";
-    wrap.style.width = px + "px";
-    wrap.appendChild(makeHallmark(addr));
-    wrap.querySelector("svg").style.width = px + "px";
-    wrap.querySelector("svg").style.height = "auto";
-    sets.appendChild(wrap);
-  }
-  const lbl = document.createElement("div");
-  lbl.className = "addr";
-  lbl.textContent = addr;
-  row.appendChild(sets);
-  row.appendChild(lbl);
-  sizesRow.appendChild(row);
-}
+// (Sizes row is now SizesSection.vue.)
 
 // =========================================================================
 // Low-res pixel mode
